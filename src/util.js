@@ -14,7 +14,9 @@ import _ from 'lodash';
 import yauzl from 'yauzl';
 import mime from 'mime-types';
 import { default as simpleGit } from 'simple-git';
+import chalk from 'chalk';
 import { LOG_LEVELS } from './constants.js';
+import bytes from 'bytes';
 
 /**
  * Parsed config object.
@@ -323,21 +325,7 @@ export function deepMerge(target, source) {
     return output;
 }
 
-export const color = {
-    byNum: (mess, fgNum) => {
-        mess = mess || '';
-        fgNum = fgNum === undefined ? 31 : fgNum;
-        return '\u001b[' + fgNum + 'm' + mess + '\u001b[39m';
-    },
-    black: (mess) => color.byNum(mess, 30),
-    red: (mess) => color.byNum(mess, 31),
-    green: (mess) => color.byNum(mess, 32),
-    yellow: (mess) => color.byNum(mess, 33),
-    blue: (mess) => color.byNum(mess, 34),
-    magenta: (mess) => color.byNum(mess, 35),
-    cyan: (mess) => color.byNum(mess, 36),
-    white: (mess) => color.byNum(mess, 37),
-};
+export const color = chalk;
 
 /**
  * Gets a random UUIDv4 string.
@@ -869,14 +857,10 @@ export function setupLogLevel() {
 export class MemoryLimitedMap {
     /**
      * Creates an instance of MemoryLimitedMap.
-     * @param {number} maxMemoryInBytes - The maximum allowed memory in bytes for string values.
+     * @param {string} cacheCapacity - Maximum memory usage in human-readable format (e.g., '1 GB').
      */
-    constructor(maxMemoryInBytes) {
-        if (typeof maxMemoryInBytes !== 'number' || maxMemoryInBytes <= 0 || isNaN(maxMemoryInBytes)) {
-            console.warn('Invalid maxMemoryInBytes, using a fallback value of 1 GB.');
-            maxMemoryInBytes = 1024 * 1024 * 1024; // 1 GB
-        }
-        this.maxMemory = maxMemoryInBytes;
+    constructor(cacheCapacity) {
+        this.maxMemory = bytes.parse(cacheCapacity) ?? 0;
         this.currentMemory = 0;
         this.map = new Map();
         this.queue = [];
@@ -899,6 +883,10 @@ export class MemoryLimitedMap {
      * @param {string} value
      */
     set(key, value) {
+        if (this.maxMemory <= 0) {
+            return;
+        }
+
         if (typeof key !== 'string' || typeof value !== 'string') {
             return;
         }

@@ -504,7 +504,6 @@ export function toAvatarKey(handle) {
  */
 export async function initUserStorage(dataRoot) {
     console.log('Using data root:', color.green(dataRoot));
-    console.log();
     await storage.init({
         dir: path.join(dataRoot, '_storage'),
         ttl: false, // Never expire

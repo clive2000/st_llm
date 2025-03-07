@@ -20,6 +20,7 @@ import bodyParser from 'body-parser';
 import open from 'open';
 
 // local library imports
+import { serverEvents, EVENT_NAMES } from './src/server-events.js';
 import { CommandLineParser } from './src/command-line.js';
 import { loadPlugins } from './src/plugin-loader.js';
 import {
@@ -41,7 +42,7 @@ import {
 
 import getWebpackServeMiddleware from './src/middleware/webpack-serve.js';
 import basicAuthMiddleware from './src/middleware/basicAuth.js';
-import whitelistMiddleware from './src/middleware/whitelist.js';
+import getWhitelistMiddleware from './src/middleware/whitelist.js';
 import accessLoggerMiddleware, { getAccessLogPath, migrateAccessLog } from './src/middleware/accessLogWriter.js';
 import multerMonkeyPatch from './src/middleware/multerMonkeyPatch.js';
 import initRequestProxy from './src/request-proxy.js';
@@ -125,7 +126,8 @@ if (cliArgs.listen && cliArgs.basicAuthMode) {
 }
 
 if (cliArgs.whitelistMode) {
-    app.use(whitelistMiddleware());
+    const whitelistMiddleware = await getWhitelistMiddleware();
+    app.use(whitelistMiddleware);
 }
 
 if (cliArgs.listen) {
@@ -254,10 +256,12 @@ async function preSetupTasks() {
     // Print formatted header
     console.log();
     console.log(`SillyTavern ${version.pkgVersion}`);
-    console.log(version.gitBranch ? `Running '${version.gitBranch}' (${version.gitRevision}) - ${version.commitDate}` : '');
-    if (version.gitBranch && !version.isLatest && ['staging', 'release'].includes(version.gitBranch)) {
-        console.log('INFO: Currently not on the latest commit.');
-        console.log('      Run \'git pull\' to update. If you have any merge conflicts, run \'git reset --hard\' and \'git pull\' to reset your branch.');
+    if (version.gitBranch) {
+        console.log(`Running '${version.gitBranch}' (${version.gitRevision}) - ${version.commitDate}`);
+        if (!version.isLatest && ['staging', 'release'].includes(version.gitBranch)) {
+            console.log('INFO: Currently not on the latest commit.');
+            console.log('      Run \'git pull\' to update. If you have any merge conflicts, run \'git reset --hard\' and \'git pull\' to reset your branch.');
+        }
     }
     console.log();
 
@@ -345,6 +349,7 @@ async function postSetupTasks(result) {
     console.log('\n' + getSeparator(plainGoToLog.length) + '\n');
 
     setupLogLevel();
+    serverEvents.emit(EVENT_NAMES.SERVER_STARTED, { url: autorunUrl });
 }
 
 /**
