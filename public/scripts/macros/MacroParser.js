@@ -20,14 +20,14 @@ class MacroParser extends CstParser {
 
         const $ = this;
 
-        this.macro = $.RULE("macro", () => {
+        this.macro = $.RULE('macro', () => {
             $.CONSUME(Tokens.Macro.Start);
             $.CONSUME(Tokens.Macro.Identifier);
             $.OPTION(() => $.SUBRULE($.arguments));
             $.CONSUME(Tokens.Macro.End);
         });
 
-        this.arguments = $.RULE("arguments", () => {
+        this.arguments = $.RULE('arguments', () => {
             $.CONSUME(Tokens.Identifier);
         });
 

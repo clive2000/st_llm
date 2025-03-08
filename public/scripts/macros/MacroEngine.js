@@ -5,7 +5,7 @@ class MacroEngine {
     static instance = new MacroEngine();
 
     constructor() {
-        this.parser = MacroParser.instance;
+        this.parser = MacroParser;
     }
 
     parseDocument(input) {

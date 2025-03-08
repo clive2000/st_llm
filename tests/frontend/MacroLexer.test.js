@@ -109,7 +109,7 @@ describe('MacroLexer', () => {
 
     describe('Macro Identifier', () => {
         // {{ a }}
-        it('allow one-character macro identifiers', async () => {
+        it('should allow one-character macro identifiers', async () => {
             const input = '{{ a }}';
             const tokens = await runLexerGetTokens(input);
 
@@ -122,7 +122,7 @@ describe('MacroLexer', () => {
             expect(tokens).toEqual(expectedTokens);
         });
         // {{ some macro }}
-        it('whitespaces between two valid identifiers will only capture the first as macro identifier', async () => {
+        it('should only capture the first identifier as macro identifier when there are whitespaces between two valid identifiers', async () => {
             const input = '{{ some macro }}';
             const tokens = await runLexerGetTokens(input);
 
@@ -162,7 +162,7 @@ describe('MacroLexer', () => {
             expect(tokens).toEqual(expectedTokens);
         });
         // {{some-longer-macro}}
-        it('allow dashes in macro identifiers', async () => {
+        it('should allow dashes in macro identifiers', async () => {
             const input = '{{some-longer-macro}}';
             const tokens = await runLexerGetTokens(input);
 
@@ -175,7 +175,7 @@ describe('MacroLexer', () => {
             expect(tokens).toEqual(expectedTokens);
         });
         // {{legacy_macro}}
-        it('allow underscores as legacy in macro identifiers', async () => {
+        it('should allow underscores as legacy in macro identifiers', async () => {
             const input = '{{legacy_macro}}';
             const tokens = await runLexerGetTokens(input);
 
@@ -190,7 +190,7 @@ describe('MacroLexer', () => {
 
         describe('Error Cases (Macro Identifier)', () => {
             // {{macro!@#%}}
-            it('[Error] do not lex special characters as part of the macro identifier', async () => {
+            it('[Error] should not lex special characters as part of the macro identifier', async () => {
                 const input = '{{macro!@#%}}';
                 const { tokens, errors } = await runLexerGetTokensAndErrors(input);
 
@@ -210,7 +210,7 @@ describe('MacroLexer', () => {
                 expect(tokens).toEqual(expectedTokens);
             });
             // {{ma!@#%ro}}
-            it('[Error] invalid chars in macro identifier are not parsed as valid macro identifier', async () => {
+            it('[Error] should not parse invalid chars in macro identifier as valid macro identifier', async () => {
                 const input = '{{ma!@#%ro}}';
                 const { tokens, errors } = await runLexerGetTokensAndErrors(input);
 
@@ -612,7 +612,7 @@ describe('MacroLexer', () => {
             expect(tokens).toEqual(expectedTokens);
         });
         // {{  !  identifier  }}
-        it('support whitespaces around flags', async () => {
+        it('should allow whitespaces around flags', async () => {
             const input = '{{  !  identifier  }}';
             const tokens = await runLexerGetTokens(input);
 
@@ -626,7 +626,7 @@ describe('MacroLexer', () => {
             expect(tokens).toEqual(expectedTokens);
         });
         // {{ ?~lateragain }}
-        it('support multiple flags', async () => {
+        it('should support multiple flags', async () => {
             const input = '{{ ?~lateragain }}';
             const tokens = await runLexerGetTokens(input);
 
@@ -641,7 +641,7 @@ describe('MacroLexer', () => {
             expect(tokens).toEqual(expectedTokens);
         });
         // {{ ! .importantvariable }}
-        it('support multiple flags with whitspace', async () => {
+        it('should support multiple flags with whitespace', async () => {
             const input = '{{ !.importantvariable }}';
             const tokens = await runLexerGetTokens(input);
 
@@ -656,7 +656,7 @@ describe('MacroLexer', () => {
             expect(tokens).toEqual(expectedTokens);
         });
         // {{ a shaaark }}
-        it('do not capture single letter as flag, but as macro identifiers', async () => {
+        it('should not capture single letter as flag, but as macro identifiers', async () => {
             const input = '{{ a shaaark }}';
             const tokens = await runLexerGetTokens(input);
 
@@ -672,7 +672,7 @@ describe('MacroLexer', () => {
 
         describe('Error Cases (Macro Execution Modifiers)', () => {
             // {{ @unknown }}
-            it('[Error] do not capture unknown special characters as flag', async () => {
+            it('[Error] should not capture unknown special characters as flag', async () => {
                 const input = '{{ @unknown }}';
                 const { tokens, errors } = await runLexerGetTokensAndErrors(input);
 
@@ -692,7 +692,7 @@ describe('MacroLexer', () => {
                 expect(tokens).toEqual(expectedTokens);
             });
             // {{ 2 cents }}
-            it('[Error] do not capture numbers as flag - they are also invalid macro identifiers', async () => {
+            it('[Error] should not capture numbers as flag - they are also invalid macro identifiers', async () => {
                 const input = '{{ 2 cents }}';
                 const { tokens, errors } = await runLexerGetTokensAndErrors(input);
 
@@ -889,7 +889,7 @@ describe('MacroLexer', () => {
                 expect(tokens).toEqual(expectedTokens);
             });
             // {{macro | Iam$peci@l}}
-            it('[Error] do not allow special characters inside output modifier identifier', async () => {
+            it('[Error] should not allow special characters inside output modifier identifier', async () => {
                 const input = '{{macro | Iam$peci@l}}';
                 const { tokens, errors } = await runLexerGetTokensAndErrors(input);
 
@@ -910,7 +910,7 @@ describe('MacroLexer', () => {
                 expect(tokens).toEqual(expectedTokens);
             });
             // {{macro | !cannotBeImportant }}
-            it('[Error] do not allow output modifiers to have execution modifiers', async () => {
+            it('[Error] should not allow output modifiers to have execution modifiers', async () => {
                 const input = '{{macro | !cannotBeImportant }}';
                 const { tokens, errors } = await runLexerGetTokensAndErrors(input);
 
@@ -931,7 +931,7 @@ describe('MacroLexer', () => {
                 expect(tokens).toEqual(expectedTokens);
             });
             // {{macro | 2invalidIdentifier}}
-            it('[Error] should throw an error for an invalid identifier starting with a number', async () => {
+            it('[Error] should not allow invalid identifier starting with a number', async () => {
                 const input = '{{macro | 2invalidIdentifier}}';
                 const { tokens, errors } = await runLexerGetTokensAndErrors(input);
 
@@ -952,7 +952,7 @@ describe('MacroLexer', () => {
                 expect(tokens).toEqual(expectedTokens);
             });
             // {{macro || outputModifier}}
-            it('[Error] should throw an error when double pipe is used without an identifier', async () => {
+            it('[Error] should not allow double pipe used without an identifier', async () => {
                 const input = '{{macro || outputModifier}}';
                 const { tokens, errors } = await runLexerGetTokensAndErrors(input);
 
@@ -977,7 +977,7 @@ describe('MacroLexer', () => {
 
     describe('Macro While Typing..', () => {
     // {{unclosed_macro word and more. Done.
-        it('lexer allows unclosed macros, but tries to parse it as a macro', async () => {
+        it('should allow unclosed macros, but tries to parse it as a macro', async () => {
             const input = '{{unclosed_macro word and more. Done.';
             const tokens = await runLexerGetTokens(input);
 
@@ -998,7 +998,7 @@ describe('MacroLexer', () => {
 
     describe('Macro and Plaintext', () => {
         // Hello, {{user}}!
-        it('basic macro tokenization', async () => {
+        it('should handle basic macro tokenization', async () => {
             const input = 'Hello, {{user}}!';
             const tokens = await runLexerGetTokens(input);
 
@@ -1028,7 +1028,7 @@ describe('MacroLexer', () => {
 
     describe('"Error" Cases in Macro Lexing', () => {
         // this is an unopened_macro}} and will be done
-        it('lexer treats unopened macors as simple plaintext', async () => {
+        it('should treat unopened macros as simple plaintext', async () => {
             const input = 'this is an unopened_macro}} and will be done';
             const tokens = await runLexerGetTokens(input);
 
@@ -1039,7 +1039,7 @@ describe('MacroLexer', () => {
             expect(tokens).toEqual(expectedTokens);
         });
         // { { not a macro } }
-        it('treats opening/closing with whitspaces between brackets not as macros', async () => {
+        it('should treat opening/closing with whitspaces between brackets not as macros', async () => {
             const input = '{ { not a macro } }';
             const tokens = await runLexerGetTokens(input);
 
@@ -1050,7 +1050,7 @@ describe('MacroLexer', () => {
             expect(tokens).toEqual(expectedTokens);
         });
         // invalid {{ 000 }} followed by correct {{ macro }}
-        it('valid macro still works after an invalid macro', async () => {
+        it('should handle valid macro correctly after an invalid macro', async () => {
             const input = 'invalid {{ 000 }} followed by correct {{ macro }}';
             const { tokens, errors } = await runLexerGetTokensAndErrors(input);
 
