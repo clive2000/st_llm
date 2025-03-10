@@ -6,7 +6,7 @@ import {
     saveSettingsDebounced,
     setGenerationParamsFromPreset,
 } from '../script.js';
-import { MAX_CONTEXT_DEFAULT, MAX_RESPONSE_DEFAULT, power_user } from './power-user.js';
+import { MAX_CONTEXT_DEFAULT, power_user } from './power-user.js';
 import { getTextTokens, tokenizers } from './tokenizers.js';
 import { getEventSourceStream } from './sse-stream.js';
 import {
@@ -166,7 +166,7 @@ export async function loadNovelSubscriptionData() {
 
 export function loadNovelPreset(preset) {
     if (preset.genamt === undefined) {
-        const needsUnlock = preset.max_context > MAX_CONTEXT_DEFAULT || preset.max_length > MAX_RESPONSE_DEFAULT;
+        const needsUnlock = preset.max_context > MAX_CONTEXT_DEFAULT;
         $('#amount_gen').val(preset.max_length).trigger('input');
         $('#max_context_unlocked').prop('checked', needsUnlock).trigger('change');
         $('#max_context').val(preset.max_context).trigger('input');

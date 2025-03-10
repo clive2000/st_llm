@@ -244,56 +244,118 @@
                             </div>
                         </div>
                         <div id="common-gen-settings-block" class="width100p">
-                            <div id="pro-settings-block" class="flex-container gap10h5v justifyCenter">
-                                <div id="amount_gen_block" class="alignitemscenter flex-container marginBot5 flexFlowColumn flexBasis48p flexGrow flexShrink gap0">
-                                    <small data-i18n="response legth(tokens)">Response (tokens)</small>
-                                    <input class="neo-range-slider" type="range" id="amount_gen" name="volume" min="16" max="2048" step="1">
-                                    <div data-randomization-disabled="true" class="wide100p">
-                                        <input class="neo-range-input" type="number" min="16" max="2048" step="1" data-for="amount_gen" id="amount_gen_counter">
+                            <div id="pro-settings-block" class="flex-container flexNoGap justifyCenter">
+
+                                <div class="flex-container gap10h5v wide100p marginTopBot5">
+                                    <div class="flex1">
+                                        <div id="streaming_textgenerationwebui_block" class="flex-container alignitemscenter justifyCenter">
+                                            <label class="checkbox_label" for="streaming_textgenerationwebui">
+                                                <input type="checkbox" id="streaming_textgenerationwebui" />
+                                                <span>
+                                                    <span data-i18n="Streaming">Streaming</span>
+                                                    <i class="margin5 fa-solid fa-circle-info opacity50p" data-i18n="[title]Streaming_desc" title="Display the response bit by bit as it is generated.&#13;When this is off, responses will be displayed all at once when they are complete."></i>
+                                                </span>
+                                            </label>
+                                        </div>
+                                        <div id="streaming_kobold_block" class="flex-container alignitemscenter">
+                                            <label class="checkbox_label" for="streaming_kobold">
+                                                <input type="checkbox" id="streaming_kobold" />
+                                                <span>
+                                                    <span data-i18n="Streaming">Streaming</span>
+                                                    <i class="margin5 fa-solid fa-circle-info opacity50p" data-i18n="[title]Streaming_desc" title="Display the response bit by bit as it is generated.&#13;When this is off, responses will be displayed all at once when they are complete."></i>
+                                                </span>
+                                            </label>
+                                        </div>
+                                        <div id="streaming_novel_block" class="flex-container alignitemscenter">
+                                            <label class="checkbox_label" for="streaming_novel">
+                                                <input type="checkbox" id="streaming_novel" />
+                                                <span>
+                                                    <span data-i18n="Streaming">Streaming</span>
+                                                    <i class="margin5 fa-solid fa-circle-info opacity50p" data-i18n="[title]Streaming_desc" title="Display the response bit by bit as it is generated.&#13;When this is off, responses will be displayed all at once when they are complete."></i>
+                                                </span>
+                                            </label>
+                                        </div>
+                                        <div id="streaming_openai_block" class="flex-container alignitemscenter">
+                                            <label class="checkbox_label" for="stream_toggle" >
+                                                <input id="stream_toggle" type="checkbox" />
+                                                <span>
+                                                    <span data-i18n="Streaming">Streaming</span>
+                                                    <i class="margin5 fa-solid fa-circle-info opacity50p" data-i18n="[title]Streaming_desc" title="Display the response bit by bit as it is generated.&#13;When this is off, responses will be displayed all at once when they are complete."></i>
+                                                </span>
+                                            </label>
+                                        </div>
                                     </div>
-                                    <div id="streaming_textgenerationwebui_block" class="flex-container alignitemscenter justifyCenter marginTop5">
-                                        <label class="checkbox_label" for="streaming_textgenerationwebui">
-                                            <input type="checkbox" id="streaming_textgenerationwebui" />
-                                            <small><span data-i18n="Streaming">Streaming</span>
-                                                <div class="margin5 fa-solid fa-circle-info opacity50p" data-i18n="[title]Streaming_desc" title="Display the response bit by bit as it is generated.&#13;When this is off, responses will be displayed all at once when they are complete."></div>
-                                            </small>
-                                        </label>
-                                    </div>
-                                    <div id="streaming_kobold_block" class="flex-container alignitemscenter justifyCenter marginTop5">
-                                        <label class="checkbox_label" for="streaming_kobold">
-                                            <input type="checkbox" id="streaming_kobold" />
-                                            <small><span data-i18n="Streaming">Streaming</span>
-                                                <div class="margin5 fa-solid fa-circle-info opacity50p" data-i18n="[title]Streaming_desc" title="Display the response bit by bit as it is generated.&#13;When this is off, responses will be displayed all at once when they are complete."></div>
-                                            </small>
-                                        </label>
-                                    </div>
-                                    <div id="streaming_novel_block" class="flex-container alignitemscenter justifyCenter marginTop5">
-                                        <label class="checkbox_label" for="streaming_novel">
-                                            <input type="checkbox" id="streaming_novel" />
-                                            <small><span data-i18n="Streaming">Streaming</span>
-                                                <div class="margin5 fa-solid fa-circle-info opacity50p" data-i18n="[title]Streaming_desc" title="Display the response bit by bit as it is generated.&#13;When this is off, responses will be displayed all at once when they are complete."></div>
-                                            </small>
-                                        </label>
+                                    <div class="flex1">
+                                        <div id="max_context_unlocked_block" class="flex-container alignitemscenter">
+                                            <label class="checkbox_label" for="max_context_unlocked">
+                                                <input id="max_context_unlocked" type="checkbox" />
+                                                <span>
+                                                    <span data-i18n="unlocked">Unlocked</span>
+                                                    <i class="margin5 fa-solid fa-circle-info opacity50p" data-i18n="[title]Only enable this if your model supports context sizes greater than 8192 tokens" title="Only enable this if your model supports context sizes greater than 8192 tokens.&#13;Increase only if you know what you're doing."></i>
+                                                </span>
+                                            </label>
+                                        </div>
+                                        <div id="oai_max_context_unlocked_block" class="flex-container alignitemscenter">
+                                            <label class="checkbox_label" for="oai_max_context_unlocked">
+                                                <input id="oai_max_context_unlocked" type="checkbox" />
+                                                <span>
+                                                    <span data-i18n="unlocked">Unlocked</span>
+                                                    <i class="margin5 fa-solid fa-circle-info opacity50p" data-i18n="[title]Only enable this if your model supports context sizes greater than 8192 tokens" title="Only enable this if your model supports context sizes greater than 8192 tokens.&#13;Increase only if you know what you're doing."></i>
+                                                </span>
+                                            </label>
+                                        </div>
                                     </div>
                                 </div>
-                                <div id="max_context_block" class="alignitemscenter flex-container marginBot5 flexFlowColumn flexBasis48p flexGrow flexShrink gap0">
-                                    <small data-i18n="context size(tokens)">Context (tokens)</small>
+
+                                <div id="max_context_block" class="range-block wide100p">
+                                    <div class="range-block-title" data-i18n="context size(tokens)">
+                                        Context (tokens)
+                                    </div>
                                     <input class="neo-range-slider" type="range" id="max_context" name="volume" min="512" max="8192" step="64">
                                     <div data-randomization-disabled="true" class="wide100p">
                                         <input class="neo-range-input" type="number" min="512" max="8192" step="64" data-for="max_context" id="max_context_counter">
                                     </div>
-                                    <div class="flex-container alignitemscenter justifyCenter marginTop5" id="max_context_unlocked_block">
-                                        <label class="checkbox_label">
-                                            <input id="max_context_unlocked" type="checkbox" />
-                                            <small><span data-i18n="unlocked">Unlocked</span>
-                                                <div id="max_context_unlocked_warning" class="fa-solid fa-circle-info opacity50p " data-i18n="[title]Only enable this if your model supports context sizes greater than 8192 tokens" title="Only enable this if your model supports context sizes greater than 8192 tokens.&#13;Increase only if you know what you're doing."></div>
-                                            </small>
-                                        </label>
+                                </div>
+
+                                <div id="openai_max_context_block" class="range-block wide100p">
+                                    <div class="range-block-title" data-i18n="context size(tokens)">
+                                        Context (tokens)
+                                    </div>
+                                    <input class="neo-range-slider" type="range" id="openai_max_context" name="volume" min="512" max="4095" step="1">
+                                    <div data-randomization-disabled="true" class="wide100p">
+                                        <input class="neo-range-input" type="number" min="512" max="4095" step="1" data-for="openai_max_context" id="openai_max_context_counter">
                                     </div>
                                 </div>
-                                <small data-tg-type="openrouter">
-                                    <span data-i18n="Max prompt cost:">Max prompt cost:</span> <span id="or_prompt_cost">&ndash;</span>
-                                </small>
+
+                                <div id="amount_gen_block" class="range-block wide100p">
+                                    <div class="range-block-title" data-i18n="response legth(tokens)">
+                                        Response (tokens)
+                                    </div>
+                                    <div class="wide100p">
+                                        <input type="number" id="amount_gen" name="amount_gen" class="text_pole" min="1" max="65536">
+                                    </div>
+                                </div>
+
+                                <div id="max_response_openai" class="range-block wide100p">
+                                    <div class="range-block-title" data-i18n="response legth(tokens)">
+                                        Response (tokens)
+                                    </div>
+                                    <div class="wide100p">
+                                        <input type="number" id="openai_max_tokens" name="openai_max_tokens" class="text_pole" min="1" max="65536">
+                                    </div>
+                                </div>
+
+                                <div id="prompt_cost_block_textgenerationwebui" class="textAlignCenter">
+                                    <small data-tg-type="openrouter">
+                                        <span data-i18n="Max prompt cost:">Max prompt cost:</span> <span id="or_prompt_cost">&ndash;</span>
+                                    </small>
+                                </div>
+
+                                <div id="prompt_cost_block_openai" class="textAlignCenter">
+                                    <small data-source="openrouter">
+                                        <span data-i18n="Max prompt cost:">Max prompt cost:</span> <span id="openrouter_max_prompt_cost">Unknown</span>
+                                    </small>
+                                </div>
                             </div>
                             <div id="ai_module_block_novel" class="width100p">
                                 <div class="range-block">
@@ -311,7 +373,7 @@
                                     </select>
                                 </div>
                             </div>
-                            <hr>
+                            <hr class="marginTop10 marginBot10">
                         </div>
                         <div id="respective-ranges-and-temps" class="width100p">
                             <!--
@@ -608,41 +670,6 @@
                                 </div>
                             </div>
                             <div id="range_block_openai">
-                                <div class="range-block">
-                                    <label class="checkbox_label">
-                                        <input id="oai_max_context_unlocked" type="checkbox" />
-                                        <span data-i18n="Unlocked Context Size">
-                                            Unlocked Context Size
-                                        </span>
-                                    </label>
-                                    <div class="toggle-description justifyLeft">
-                                        <span data-i18n="Unrestricted maximum value for the context slider">
-                                            Unrestricted maximum value for the context size slider. Enable only if you know
-                                            what you're doing.
-                                        </span>
-                                    </div>
-                                </div>
-                                <div class="range-block">
-                                    <div class="range-block-title" data-i18n="Context Size (tokens)">
-                                        Context Size (tokens)
-                                    </div>
-                                    <div class="range-block-range-and-counter">
-                                        <div class="range-block-range">
-                                            <input type="range" id="openai_max_context" name="volume" min="512" max="4095" step="1">
-                                        </div>
-                                        <div class="range-block-counter" data-randomization-disabled="true">
-                                            <input type="number" min="512" max="4095" step="1" data-for="openai_max_context" id="openai_max_context_counter">
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="range-block">
-                                    <div class="range-block-title" data-i18n="Max Response Length (tokens)">
-                                        Max Response Length (tokens)
-                                    </div>
-                                    <div class="wide100p">
-                                        <input type="number" id="openai_max_tokens" name="openai_max_tokens" class="text_pole" min="1" max="65536">
-                                    </div>
-                                </div>
                                 <div class="range-block" data-source="openai,custom">
                                     <div class="range-block-title" data-i18n="Multiple swipes per generation">
                                         Multiple swipes per generation
@@ -662,24 +689,6 @@
                                             <option value="on" data-i18n="Allow">Allow</option>
                                             <option value="off" data-i18n="Forbid">Forbid</option>
                                         </select>
-                                    </div>
-                                </div>
-                                <div data-source="openrouter">
-                                    Max prompt cost: <span id="openrouter_max_prompt_cost">Unknown</span>
-                                </div>
-                                <hr>
-                                <div class="range-block">
-                                    <label for="stream_toggle" title="Enable OpenAI completion streaming" data-i18n="[title]Enable OpenAI completion streaming" class="checkbox_label widthFreeExpand">
-                                        <input id="stream_toggle" type="checkbox" /><span data-i18n="Streaming">
-                                            Streaming</span>
-                                    </label>
-                                    <div class="toggle-description justifyLeft">
-                                        <span data-i18n="Display the response bit by bit as it is generated.">
-                                            Display the response bit by bit as it is generated.
-                                        </span><br>
-                                        <span data-i18n="When this is off, responses will be displayed all at once when they are complete.">
-                                            When this is off, responses will be displayed all at once when they are complete.
-                                        </span>
                                     </div>
                                 </div>
                                 <div class="range-block" data-source="openai,claude,windowai,openrouter,ai21,scale,makersuite,mistralai,custom,cohere,perplexity,groq,01ai,nanogpt,deepseek">

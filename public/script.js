@@ -86,7 +86,6 @@ import {
     loadMovingUIState,
     getCustomStoppingStrings,
     MAX_CONTEXT_DEFAULT,
-    MAX_RESPONSE_DEFAULT,
     renderStoryString,
     sortEntitiesList,
     registerDebugFunction,
@@ -6905,6 +6904,8 @@ export function changeMainAPI() {
             apiConnector: $('#kobold_horde'),
             apiPresets: $('#kobold_api-presets'),
             apiRanges: $('#range_block'),
+            apiUnlock: $('#max_context_unlocked_block'),
+            apiCost: $('#NULL_SELECTOR'),
             maxContextElem: $('#max_context_block'),
             amountGenElem: $('#amount_gen_block'),
         },
@@ -6914,6 +6915,8 @@ export function changeMainAPI() {
             apiConnector: $('#kobold_api'),
             apiPresets: $('#kobold_api-presets'),
             apiRanges: $('#range_block'),
+            apiUnlock: $('#max_context_unlocked_block'),
+            apiCost: $('#NULL_SELECTOR'),
             maxContextElem: $('#max_context_block'),
             amountGenElem: $('#amount_gen_block'),
         },
@@ -6923,6 +6926,8 @@ export function changeMainAPI() {
             apiConnector: $('#textgenerationwebui_api'),
             apiPresets: $('#textgenerationwebui_api-presets'),
             apiRanges: $('#range_block_textgenerationwebui'),
+            apiUnlock: $('#max_context_unlocked_block'),
+            apiCost: $('#prompt_cost_block_textgenerationwebui'),
             maxContextElem: $('#max_context_block'),
             amountGenElem: $('#amount_gen_block'),
         },
@@ -6932,21 +6937,23 @@ export function changeMainAPI() {
             apiConnector: $('#novel_api'),
             apiPresets: $('#novel_api-presets'),
             apiRanges: $('#range_block_novel'),
+            apiUnlock: $('#max_context_unlocked_block'),
+            apiCost: $('#NULL_SELECTOR'),
             maxContextElem: $('#max_context_block'),
             amountGenElem: $('#amount_gen_block'),
         },
         'openai': {
-            apiStreaming: $('#NULL_SELECTOR'),
+            apiStreaming: $('#streaming_openai_block'),
             apiSettings: $('#openai_settings'),
             apiConnector: $('#openai_api'),
             apiPresets: $('#openai_api-presets'),
             apiRanges: $('#range_block_openai'),
-            maxContextElem: $('#max_context_block'),
-            amountGenElem: $('#amount_gen_block'),
+            apiUnlock: $('#oai_max_context_unlocked_block'),
+            apiCost: $('#prompt_cost_block_openai'),
+            maxContextElem: $('#openai_max_context_block'),
+            amountGenElem: $('#max_response_openai'),
         },
     };
-    //console.log('--- apiElements--- ');
-    //console.log(apiElements);
 
     //first, disable everything so the old elements stop showing
     for (const apiName in apiElements) {
@@ -6960,6 +6967,10 @@ export function changeMainAPI() {
         apiObj.apiRanges.css('display', 'none');
         apiObj.apiPresets.css('display', 'none');
         apiObj.apiStreaming.css('display', 'none');
+        apiObj.apiUnlock.css('display', 'none');
+        apiObj.apiCost.css('display', 'none');
+        apiObj.maxContextElem.css('display', 'none');
+        apiObj.amountGenElem.css('display', 'none');
     }
 
     //then, find and enable the active item.
@@ -6971,15 +6982,13 @@ export function changeMainAPI() {
     activeItem.apiConnector.css('display', 'block');
     activeItem.apiRanges.css('display', 'block');
     activeItem.apiPresets.css('display', 'block');
+    activeItem.apiUnlock.css('display', 'block');
+    activeItem.apiCost.css('display', 'block');
+    activeItem.maxContextElem.css('display', 'block');
+    activeItem.amountGenElem.css('display', 'block');
 
     if (selectedVal === 'openai') {
         activeItem.apiPresets.css('display', 'flex');
-    }
-
-    if (selectedVal === 'textgenerationwebui' || selectedVal === 'novel') {
-        console.debug('enabling amount_gen for ooba/novel');
-        activeItem.amountGenElem.find('input').prop('disabled', false);
-        activeItem.amountGenElem.css('opacity', 1.0);
     }
 
     //custom because streaming has been moved up under response tokens, which exists inside common settings block
@@ -6987,15 +6996,6 @@ export function changeMainAPI() {
         $('#ai_module_block_novel').css('display', 'block');
     } else {
         $('#ai_module_block_novel').css('display', 'none');
-    }
-
-    // Hide common settings for OpenAI
-    console.debug('value?', selectedVal);
-    if (selectedVal == 'openai') {
-        console.debug('hiding settings?');
-        $('#common-gen-settings-block').css('display', 'none');
-    } else {
-        $('#common-gen-settings-block').css('display', 'block');
     }
 
     main_api = selectedVal;
@@ -7317,13 +7317,12 @@ export async function saveSettings(loopCounter = 0) {
  * @param {{ genamt?: number, max_length?: number }} preset Preset object
  */
 export function setGenerationParamsFromPreset(preset) {
-    const needsUnlock = (preset.max_length ?? max_context) > MAX_CONTEXT_DEFAULT || (preset.genamt ?? amount_gen) > MAX_RESPONSE_DEFAULT;
+    const needsUnlock = (preset.max_length ?? max_context) > MAX_CONTEXT_DEFAULT;
     $('#max_context_unlocked').prop('checked', needsUnlock).trigger('change');
 
     if (preset.genamt !== undefined) {
         amount_gen = preset.genamt;
         $('#amount_gen').val(amount_gen);
-        $('#amount_gen_counter').val(amount_gen);
     }
 
     if (preset.max_length !== undefined) {

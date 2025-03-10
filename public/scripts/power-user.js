@@ -69,9 +69,7 @@ export {
 };
 
 export const MAX_CONTEXT_DEFAULT = 8192;
-export const MAX_RESPONSE_DEFAULT = 2048;
 const MAX_CONTEXT_UNLOCKED = 200 * 1024;
-const MAX_RESPONSE_UNLOCKED = 16 * 1024;
 const unlockedMaxContextStep = 512;
 const maxContextMin = 512;
 const maxContextStep = 64;
@@ -1709,14 +1707,6 @@ function switchMaxContextSize() {
         if (value >= maxValue) {
             element.val(maxValue).trigger('input');
         }
-    }
-
-    const maxAmountGen = power_user.max_context_unlocked ? MAX_RESPONSE_UNLOCKED : MAX_RESPONSE_DEFAULT;
-    $('#amount_gen').attr('max', maxAmountGen);
-    $('#amount_gen_counter').attr('max', maxAmountGen);
-
-    if (Number($('#amount_gen').val()) >= maxAmountGen) {
-        $('#amount_gen').val(maxAmountGen).trigger('input');
     }
 
     if (power_user.enableZenSliders) {
