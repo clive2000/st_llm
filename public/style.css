@@ -5098,6 +5098,16 @@ body:not(.sd) .mes_img_swipes {
     max-width: 100% !important;
 }
 
+.mes_img_container div[data-img-prompt-type] {
+    display: none;
+}
+
+.mes_img_container[data-img-prompt-type="none"] div[data-img-prompt-type="none"],
+.mes_img_container[data-img-prompt-type="one"] div[data-img-prompt-type="one"],
+.mes_img_container[data-img-prompt-type="all"] div[data-img-prompt-type="all"] {
+    display: initial;
+}
+
 /* Align the content of this span to the right */
 .delete-button {
     margin-right: 10px;

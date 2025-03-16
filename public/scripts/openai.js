@@ -75,6 +75,7 @@ import { Popup, POPUP_RESULT } from './popup.js';
 import { t } from './i18n.js';
 import { ToolManager } from './tool-calling.js';
 import { accountStorage } from './util/AccountStorage.js';
+import { IMAGE_PROMPT_TYPE } from './chats.js';
 
 export {
     openai_messages_count,
@@ -560,7 +561,17 @@ function setOpenAIMessages(chat) {
         const name = chat[j]['name'];
         const image = chat[j]?.extra?.image;
         const invocations = chat[j]?.extra?.tool_invocations;
-        messages[i] = { 'role': role, 'content': content, name: name, 'image': image, 'invocations': invocations };
+        const imagePromptType = chat[j]?.extra?.image_prompt_type ?? IMAGE_PROMPT_TYPE.ONE;
+        const imageSwipes = chat[j]?.extra?.image_swipes ?? [];
+        messages[i] = {
+            role,
+            content,
+            name,
+            invocations,
+            image,
+            imagePromptType,
+            imageSwipes,
+        };
         j++;
     }
 
@@ -845,7 +856,7 @@ async function populateChatHistory(messages, prompts, chatCompletion, type = nul
         }
 
         if (imageInlining && chatPrompt.image) {
-            await chatMessage.addImage(chatPrompt.image);
+            await chatMessage.addImage(chatPrompt.image, chatPrompt.imagePromptType, chatPrompt.imageSwipes);
         }
 
         if (canUseTools && Array.isArray(chatPrompt.invocations)) {
@@ -2602,38 +2613,55 @@ class Message {
 
     /**
      * Adds an image to the message.
-     * @param {string} image Image URL or Data URL.
+     * @param {string} sourceImage Image URL or Data URL.
+     * @param {string} imagePromptType Type of image prompt.
+     * @param {string[]} imageSwipes Swipes for the image.
      * @returns {Promise<void>}
      */
-    async addImage(image) {
+    async addImage(sourceImage, imagePromptType = IMAGE_PROMPT_TYPE.ONE, imageSwipes = []) {
+        const quality = oai_settings.inline_image_quality || default_settings.inline_image_quality;
         const textContent = this.content;
-        const isDataUrl = isDataURL(image);
-        if (!isDataUrl) {
-            try {
-                const response = await fetch(image, { method: 'GET', cache: 'force-cache' });
-                if (!response.ok) throw new Error('Failed to fetch image');
-                const blob = await response.blob();
-                image = await getBase64Async(blob);
-            } catch (error) {
-                console.error('Image adding skipped', error);
+        const sourceImages = [];
+
+        switch (imagePromptType) {
+            case IMAGE_PROMPT_TYPE.NONE:
                 return;
-            }
+            case IMAGE_PROMPT_TYPE.ONE:
+                sourceImages.push(sourceImage);
+                break;
+            case IMAGE_PROMPT_TYPE.ALL:
+                sourceImages.push(...imageSwipes);
+                break;
         }
 
-        image = await this.compressImage(image);
-
-        const quality = oai_settings.inline_image_quality || default_settings.inline_image_quality;
         this.content = [
             { type: 'text', text: textContent },
-            { type: 'image_url', image_url: { 'url': image, 'detail': quality } },
         ];
 
-        try {
-            const tokens = await this.getImageTokenCost(image, quality);
-            this.tokens += tokens;
-        } catch (error) {
-            this.tokens += Message.tokensPerImage;
-            console.error('Failed to get image token cost', error);
+        for (let image of sourceImages) {
+            const isDataUrl = isDataURL(image);
+            if (!isDataUrl) {
+                try {
+                    const response = await fetch(image, { method: 'GET', cache: 'force-cache' });
+                    if (!response.ok) throw new Error('Failed to fetch image');
+                    const blob = await response.blob();
+                    image = await getBase64Async(blob);
+                } catch (error) {
+                    console.error('Image adding skipped', error);
+                    continue;
+                }
+            }
+
+            image = await this.compressImage(image);
+            this.content.push({ type: 'image_url', image_url: { url: image, detail: quality } });
+
+            try {
+                const tokens = await this.getImageTokenCost(image, quality);
+                this.tokens += tokens;
+            } catch (error) {
+                this.tokens += Message.tokensPerImage;
+                console.error('Failed to get image token cost', error);
+            }
         }
     }
 

@@ -2337,10 +2337,10 @@ function processReply(str) {
     str = str.replaceAll('“', '');
     str = str.replaceAll('\n', ', ');
     str = str.normalize('NFD');
-    
+
     // Strip out non-alphanumeric characters barring model syntax exceptions
     str = str.replace(/[^a-zA-Z0-9.,:_(){}<>[\]\-'|#]+/g, ' ');
-    
+
     str = str.replace(/\s+/g, ' '); // Collapse multiple whitespaces into one
     str = str.trim();
 
@@ -3234,7 +3234,7 @@ function getNovelParams() {
         extension_settings.sd.scheduler = 'karras';
     }
 
-    if (extension_settings.sd.sampler === 'ddim' || 
+    if (extension_settings.sd.sampler === 'ddim' ||
         ['nai-diffusion-4-curated-preview', 'nai-diffusion-4-full'].includes(extension_settings.sd.model)) {
         sm = false;
         sm_dyn = false;
@@ -4000,6 +4000,7 @@ async function onImageSwiped({ message, element, direction }) {
     }
 
     const currentIndex = swipes.indexOf(message.extra.image);
+    const canGenerate = !!message.extra.title;
 
     if (currentIndex === -1) {
         console.warn('Current image not found in the swipes');
@@ -4015,8 +4016,17 @@ async function onImageSwiped({ message, element, direction }) {
         appendMediaToMessage(message, element, false);
     }
 
+    // Wrap around at the end if the image is missing a prompt
+    if (direction === 'right' && !canGenerate) {
+        const newIndex = currentIndex === swipes.length - 1 ? 0 : currentIndex + 1;
+        message.extra.image = swipes[newIndex];
+
+        // Update the image in the message
+        appendMediaToMessage(message, element, false);
+    }
+
     // Switch to next image or generate a new one if at the end
-    if (direction === 'right') {
+    if (direction === 'right' && canGenerate) {
         const newIndex = currentIndex === swipes.length - 1 ? swipes.length : currentIndex + 1;
 
         if (newIndex === swipes.length) {

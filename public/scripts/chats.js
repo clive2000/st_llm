@@ -86,6 +86,16 @@ const converters = {
 };
 
 /**
+ * @enum {string}
+ * @readonly
+ */
+export const IMAGE_PROMPT_TYPE = Object.freeze({
+    ALL: 'all',
+    ONE: 'one',
+    NONE: 'none',
+});
+
+/**
  * Finds a matching key in the converters object.
  * @param {string} type MIME type
  * @returns {string} Matching key
@@ -201,8 +211,45 @@ export async function populateFileAttachment(message, inputId = 'file_form_input
 
         // If file is image
         if (file.type.startsWith('image/')) {
+            let addSwipe = false;
+            if (message.extra.image) {
+                const popupResult = await callGenericPopup(t`This message already has an image attached. Replace it?`, POPUP_TYPE.TEXT, '', {
+                    okButton: t`Add swipe`,
+                    customButtons: [
+                        {
+                            text: t`Replace image`,
+                            appendAtEnd: true,
+                            result: POPUP_RESULT.CUSTOM1,
+                        },
+                        {
+                            text: t`Cancel`,
+                            appendAtEnd: true,
+                            result: POPUP_RESULT.CANCELLED,
+                        },
+                    ],
+                });
+
+                if (!popupResult) {
+                    return;
+                }
+
+                addSwipe = popupResult === POPUP_RESULT.AFFIRMATIVE;
+            }
+
             const extension = file.type.split('/')[1];
             const imageUrl = await saveBase64AsFile(base64Data, name2, fileNamePrefix, extension);
+            if (addSwipe) {
+                if (!message.extra.image_swipes) {
+                    message.extra.image_swipes = [];
+                }
+
+                if (message.extra.image && !message.extra.image_swipes.includes(message.extra.image)) {
+                    message.extra.image_swipes.push(message.extra.image);
+                }
+
+                message.extra.image_swipes.push(imageUrl);
+            }
+
             message.extra.image = imageUrl;
             message.extra.inline_image = true;
         } else {
@@ -573,6 +620,40 @@ export function isExternalMediaAllowed() {
     }
 
     return !power_user.forbid_external_media;
+}
+
+function switchMessageImagePromptType() {
+    const mesBlock = $(this).closest('.mes');
+    const mesId = mesBlock.attr('mesid');
+    const message = chat[mesId];
+
+    if (!message) {
+        return;
+    }
+
+    if (!message.extra) {
+        message.extra = {};
+    }
+
+    const existingType = message.extra.image_prompt_type ?? IMAGE_PROMPT_TYPE.ONE;
+    const typeValues = Object.values(IMAGE_PROMPT_TYPE);
+    const nextType = typeValues[(typeValues.findIndex(type => type === existingType) + 1) % typeValues.length];
+
+    message.extra.image_prompt_type = nextType;
+    appendMediaToMessage(message, mesBlock);
+    saveChatDebounced();
+
+    switch (nextType) {
+        case IMAGE_PROMPT_TYPE.ALL:
+            toastr.info(t`All image swipes will be sent in prompt for this message`);
+            break;
+        case IMAGE_PROMPT_TYPE.ONE:
+            toastr.info(t`Only the shown image swipe will be sent in prompt for this message`);
+            break;
+        case IMAGE_PROMPT_TYPE.NONE:
+            toastr.info(t`No images will be sent in prompt for this message`);
+            break;
+    }
 }
 
 async function enlargeMessageImage() {
@@ -1605,6 +1686,7 @@ jQuery(function () {
 
     $(document).on('click', '.mes_img_enlarge', enlargeMessageImage);
     $(document).on('click', '.mes_img_delete', deleteMessageImage);
+    $(document).on('click', '.mes_img_prompt_type', switchMessageImagePromptType);
 
     $('#file_form_input').on('change', async () => {
         const fileInput = document.getElementById('file_form_input');

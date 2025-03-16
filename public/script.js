@@ -243,7 +243,7 @@ import { getBackgrounds, initBackgrounds, loadBackgroundSettings, background_set
 import { hideLoader, showLoader } from './scripts/loader.js';
 import { BulkEditOverlay, CharacterContextMenu } from './scripts/BulkEditOverlay.js';
 import { loadFeatherlessModels, loadMancerModels, loadOllamaModels, loadTogetherAIModels, loadInfermaticAIModels, loadOpenRouterModels, loadVllmModels, loadAphroditeModels, loadDreamGenModels, initTextGenModels, loadTabbyModels, loadGenericModels } from './scripts/textgen-models.js';
-import { appendFileContent, hasPendingFileAttachment, populateFileAttachment, decodeStyleTags, encodeStyleTags, isExternalMediaAllowed, getCurrentEntityId, preserveNeutralChat, restoreNeutralChat } from './scripts/chats.js';
+import { appendFileContent, hasPendingFileAttachment, populateFileAttachment, decodeStyleTags, encodeStyleTags, isExternalMediaAllowed, getCurrentEntityId, preserveNeutralChat, restoreNeutralChat, IMAGE_PROMPT_TYPE } from './scripts/chats.js';
 import { getPresetManager, initPresetManager } from './scripts/preset-manager.js';
 import { evaluateMacros, getLastMessageId, initMacros } from './scripts/macros.js';
 import { currentUser, setUserControls } from './scripts/user.js';
@@ -2320,6 +2320,7 @@ export function updateMessageBlock(messageId, message, { rerenderMessage = true 
 export function appendMediaToMessage(mes, messageElement, adjustScroll = true) {
     // Add image to message
     if (mes.extra?.image) {
+        const promptType = mes.extra.image_prompt_type ?? IMAGE_PROMPT_TYPE.ONE;
         const container = messageElement.find('.mes_img_container');
         const chatHeight = $('#chat').prop('scrollHeight');
         const image = messageElement.find('.mes_img');
@@ -2339,6 +2340,7 @@ export function appendMediaToMessage(mes, messageElement, adjustScroll = true) {
         container.addClass('img_extra');
         image.toggleClass('img_inline', isInline);
         text.toggleClass('displayNone', !isInline);
+        container.attr('data-img-prompt-type', promptType);
 
         const imageSwipes = mes.extra.image_swipes;
         if (Array.isArray(imageSwipes) && imageSwipes.length > 0) {
