@@ -40,20 +40,6 @@ describe('MacroParser', () => {
 
             expect(macroCst).toEqual(expectedCst);
         });
-        // {{ macro value }}
-        it('should only read one identifier and treat the rest as arguments', async () => {
-            const input = '{{ macro value }}';
-            const macroCst = await runParser(input);
-
-            const expectedCst = {
-                'Macro.Start': '{{',
-                'Macro.Identifier': 'macro',
-                'arguments': { 'Identifier': 'value' },
-                'Macro.End': '}}',
-            };
-
-            expect(macroCst).toEqual(expectedCst);
-        });
 
         describe('Error Cases (General Macro', () => {
             // {{}}
@@ -94,16 +80,107 @@ describe('MacroParser', () => {
             });
         });
     });
+
+    describe('Arguments Handling', () => {
+        it('should parse macros with double-colon argument', async () => {
+            const input = '{{getvar::myvar}}';
+            const macroCst = await runParser(input, {
+                flattenKeys: ['arguments.argument'],
+            });
+            expect(macroCst).toEqual({
+                'Macro.Start': '{{',
+                'Macro.Identifier': 'getvar',
+                'arguments': {
+                    'separator': '::',
+                    'argument': 'myvar',
+                },
+                'Macro.End': '}}',
+            });
+        });
+
+        it('should parse macros with single colon arguments', async () => {
+            const input = '{{roll:3d20}}';
+            const macroCst = await runParser(input, {
+                flattenKeys: ['arguments.argument'],
+            });
+            expect(macroCst).toEqual({
+                'Macro.Start': '{{',
+                'Macro.Identifier': 'roll',
+                'arguments': {
+                    'separator': ':',
+                    'argument': '3d20',
+                },
+                'Macro.End': '}}',
+            });
+        });
+
+        it('should parse macros with double-colon arguments', async () => {
+            const input = '{{setvar::myvar::value}}';
+            const macroCst = await runParser(input, {
+                flattenKeys: ['arguments.argument'],
+                ignoreKeys: ['arguments.Args.DoubleColon'],
+            });
+            expect(macroCst).toEqual({
+                'Macro.Start': '{{',
+                'Macro.Identifier': 'setvar',
+                'arguments': {
+                    'separator': '::',
+                    'argument': ['myvar', 'value'],
+                },
+                'Macro.End': '}}',
+            });
+        });
+
+        it('should strip spaces around arguments', async () => {
+            const input = '{{something::  spaced  }}';
+            const macroCst = await runParser(input, {
+                flattenKeys: ['arguments.argument'],
+                ignoreKeys: ['arguments.separator', 'arguments.Args.DoubleColon'],
+            });
+            expect(macroCst).toEqual({
+                'Macro.Start': '{{',
+                'Macro.Identifier': 'something',
+                'arguments': { 'argument': 'spaced' },
+                'Macro.End': '}}',
+            });
+        });
+    });
+
+    describe('Nested Macros', () => {
+        it('should parse nested macros inside arguments', async () => {
+            const input = '{{outer::word {{inner}}}}';
+            const macroCst = await runParser(input, {});
+            expect(macroCst).toEqual({
+                'Macro.Start': '{{',
+                'Macro.Identifier': 'outer',
+                'arguments': {
+                    'argument': {
+                        'Identifier': 'word',
+                        'macro': {
+                            'Macro.Start': '{{',
+                            'Macro.Identifier': 'inner',
+                            'Macro.End': '}}',
+                        },
+                    },
+                    'separator': '::',
+                },
+                'Macro.End': '}}',
+            });
+        });
+    });
 });
 
 /**
  * Runs the input through the MacroParser and returns the result.
  *
  * @param {string} input - The input string to be parsed.
- * @return {Promise<TestableCstNode>} A promise that resolves to the result of the MacroParser.
+ * @param {Object} [options={}] Optional arguments
+ * @param {string[]} [options.flattenKeys=[]] Optional array of dot-separated keys to flatten
+ * @param {string[]} [options.ignoreKeys=[]] Optional array of dot-separated keys to ignore
+ * @returns {Promise<TestableCstNode>} A promise that resolves to the result of the MacroParser.
  */
-async function runParser(input) {
-    const { cst, errors } = await runParserAndGetErrors(input);
+async function runParser(input, options = {}) {
+    const { cst, errors } = await runParserAndGetErrors(input, options);
 
     // Make sure that parser errors get correctly marked as errors during testing, even if the resulting structure might work.
     // If we don't test for errors, the test should fail.
@@ -120,9 +197,12 @@ async function runParser(input) {
  * Use `runParser` if you don't want to explicitly test against parser errors.
  *
  * @param {string} input - The input string to be parsed.
- * @return {Promise<{cst: TestableCstNode, errors: TestableRecognitionException[]}>} A promise that resolves to the result of the MacroParser and error list.
+ * @param {Object} [options={}] Optional arguments
+ * @param {string[]} [options.flattenKeys=[]] Optional array of dot-separated keys to flatten
+ * @param {string[]} [options.ignoreKeys=[]] Optional array of dot-separated keys to ignore
+ * @returns {Promise<{cst: TestableCstNode, errors: TestableRecognitionException[]}>} A promise that resolves to the result of the MacroParser and error list.
  */
-async function runParserAndGetErrors(input) {
+async function runParserAndGetErrors(input, options = {}) {
     const result = await page.evaluate(async (input) => {
         /** @type {import('../../public/scripts/macros/MacroParser.js')} */
         const { MacroParser } = await import('./scripts/macros/MacroParser.js');
@@ -131,31 +211,56 @@ async function runParserAndGetErrors(input) {
         return result;
     }, input);
 
-    return { cst: simplifyCstNode(result.cst), errors: simplifyErrors(result.errors) };
+    return { cst: simplifyCstNode(result.cst, input, options), errors: simplifyErrors(result.errors) };
 }
 
 /**
  * Simplify the parser syntax tree result into an easily testable format.
  *
  * @param {CstNode} result The result from the parser
+ * @param {Object} [options={}] Optional arguments
+ * @param {string[]} [options.flattenKeys=[]] Optional array of dot-separated keys to flatten
+ * @param {string[]} [options.ignoreKeys=[]] Optional array of dot-separated keys to ignore
  * @returns {TestableCstNode} The testable syntax tree
  */
-function simplifyCstNode(cst) {
-    /** @returns {TestableCstNode} @param {CstNode} node */
-    function simplifyNode(node) {
+function simplifyCstNode(cst, input, { flattenKeys = [], ignoreKeys = [] } = {}) {
+    /** @returns {TestableCstNode} @param {CstNode} node @param {string[]} path */
+    function simplifyNode(node, path = []) {
         if (!node) return node;
         if (Array.isArray(node)) {
             // Single-element arrays are converted to a single string
             if (node.length === 1) {
-                return node[0].image || simplifyNode(node[0]);
+                return node[0].image || simplifyNode(node[0], path.concat('[]'));
             }
             // For multiple elements, return an array of simplified nodes
-            return node.map(simplifyNode);
+            return node.map(child => simplifyNode(child, path.concat('[]')));
         }
         if (node.children) {
             const simplifiedChildren = {};
             for (const key in node.children) {
-                simplifiedChildren[key] = simplifyNode(node.children[key]);
+                function simplifyChildNode(childNode, path) {
+                    if (Array.isArray(childNode)) {
+                        // Single-element arrays are converted to a single string
+                        if (childNode.length === 1) {
+                            return simplifyChildNode(childNode[0], path.concat('[]'));
+                        }
+                        return childNode.map(child => simplifyChildNode(child, path.concat('[]')));
+                    }
+
+                    const flattenKey = path.filter(x => x !== '[]').join('.');
+                    if (ignoreKeys.includes(flattenKey)) {
+                        return null;
+                    } else if (flattenKeys.includes(flattenKey)) {
+                        const startOffset = childNode.location.startOffset;
+                        const endOffset = childNode.location.endOffset;
+                        return input.slice(startOffset, endOffset + 1);
+                    } else {
+                        return simplifyNode(childNode, path);
+                    }
+                }
+
+                const simplifiedValue = simplifyChildNode(node.children[key], path.concat(key));
+                simplifiedValue && (simplifiedChildren[key] = simplifiedValue);
             }
             return simplifiedChildren;
         }

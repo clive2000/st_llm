@@ -1,6 +1,8 @@
 import { CstParser } from '../../lib/chevrotain.js';
 import { MacroLexer } from './MacroLexer.js';
 
+/** @typedef {import('../../lib/chevrotain.js').TokenType} TokenType */
+
 /**
  * The singleton instance of the MacroParser.
  *
@@ -15,20 +17,45 @@ class MacroParser extends CstParser {
 
     /** @private */
     constructor() {
-        super(MacroLexer.def);
+        super(MacroLexer.def, {
+            traceInitPerf: true,
+            nodeLocationTracking: 'full',
+        });
         const Tokens = MacroLexer.tokens;
 
         const $ = this;
 
-        this.macro = $.RULE('macro', () => {
+        // Basic Macro Structure
+        $.macro = $.RULE('macro', () => {
             $.CONSUME(Tokens.Macro.Start);
             $.CONSUME(Tokens.Macro.Identifier);
             $.OPTION(() => $.SUBRULE($.arguments));
             $.CONSUME(Tokens.Macro.End);
         });
 
-        this.arguments = $.RULE('arguments', () => {
-            $.CONSUME(Tokens.Identifier);
+        // Arguments Parsing
+        $.arguments = $.RULE('arguments', () => {
+            // Remember the separator being used, it needs to stay consistent
+            /** @type {import('../../lib/chevrotain.js').IToken} */
+            let separator;
+            $.OR([
+                { ALT: () => separator = $.CONSUME(Tokens.Args.DoubleColon, { LABEL: 'separator' }) },
+                { ALT: () => separator = $.CONSUME(Tokens.Args.Colon, { LABEL: 'separator' }) },
+            ]);
+            $.AT_LEAST_ONE_SEP({
+                SEP: separator.tokenType,
+                DEF: () => $.SUBRULE($.argument),
+            });
+        });
+
+        $.argument = $.RULE('argument', () => {
+            $.MANY(() => {
+                $.OR([
+                    { ALT: () => $.SUBRULE($.macro) }, // Nested Macros
+                    { ALT: () => $.CONSUME(Tokens.Identifier) },
+                    { ALT: () => $.CONSUME(Tokens.Unknown) },
+                ]);
+            });
         });
 
         this.performSelfAnalysis();

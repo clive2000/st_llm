@@ -6,10 +6,10 @@ import { createToken, Lexer } from '../../lib/chevrotain.js';
 const modes = {
     plaintext: 'plaintext_mode',
     macro_def: 'macro_def_mode',
-    macro_identifier_end: 'macro_identifier_end',
+    macro_identifier_end: 'macro_identifier_end_mode',
     macro_args: 'macro_args_mode',
     macro_filter_modifer: 'macro_filter_modifer_mode',
-    macro_filter_modifier_end: 'macro_filter_modifier_end',
+    macro_filter_modifier_end: 'macro_filter_modifier_end_mode',
 };
 
 /** @readonly */
@@ -146,7 +146,9 @@ class MacroLexer extends Lexer {
 
     /** @private */
     constructor() {
-        super(MacroLexer.def);
+        super(MacroLexer.def, {
+            traceInitPerf: true,
+        });
     }
 
     test(input) {
