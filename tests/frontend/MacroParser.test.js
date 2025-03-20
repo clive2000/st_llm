@@ -78,6 +78,20 @@ describe('MacroParser', () => {
                 expect(macroCst).toBeUndefined();
                 expect(errors).toEqual(expectedErrors);
             });
+
+            // something{{user}}
+            // something{{user}}
+            it('[Error] for testing purposes, macros need to start at the beginning of the string', async () => {
+                const input = 'something{{user}}';
+                const { macroCst, errors } = await runParserAndGetErrors(input);
+
+                const expectedErrors = [
+                    { name: 'MismatchedTokenException', message: 'Expecting token of type --> Macro.Start <-- but found --> \'something\' <--' },
+                ];
+
+                expect(macroCst).toBeUndefined();
+                expect(errors).toEqual(expectedErrors);
+            });
         });
     });
 
@@ -221,6 +235,54 @@ describe('MacroParser', () => {
                 },
                 'Macro.End': '}}',
             });
+        });
+
+        it('should parse two nested macros next to each other inside an argument', async () => {
+            const input = '{{outer::word {{inner1}}{{inner2}}}}';
+            const macroCst = await runParser(input, {});
+            expect(macroCst).toEqual({
+                'Macro.Start': '{{',
+                'Macro.Identifier': 'outer',
+                'arguments': {
+                    'argument': {
+                        'Identifier': 'word',
+                        'macro': [
+                            {
+                                'Macro.Start': '{{',
+                                'Macro.Identifier': 'inner1',
+                                'Macro.End': '}}',
+                            },
+                            {
+                                'Macro.Start': '{{',
+                                'Macro.Identifier': 'inner2',
+                                'Macro.End': '}}',
+                            },
+                        ],
+                    },
+                    'separator': '::',
+                },
+                'Macro.End': '}}',
+            });
+        });
+
+        describe('Error Cases (Nested Macros)', () => {
+
+            it('[Error] should throw when there is a nested macro instead of an identifier', async () => {
+                const input = '{{{{macroindentifier}}::value}}';
+                const { macroCst, errors } = await runParserAndGetErrors(input);
+
+                expect(macroCst).toBeUndefined();
+                expect(errors).toHaveLength(1); // error doesn't really matter. Just don't parse it pls.
+            });
+
+            it('[Error] should throw when there is a macro inside an identifier', async () => {
+                const input = '{{inside{{macro}}me}}';
+                const { macroCst, errors } = await runParserAndGetErrors(input);
+
+                expect(macroCst).toBeUndefined();
+                expect(errors).toHaveLength(1); // error doesn't really matter. Just don't parse it pls.
+            });
+
         });
     });
 });
