@@ -41,7 +41,7 @@ describe('MacroParser', () => {
             expect(macroCst).toEqual(expectedCst);
         });
 
-        describe('Error Cases (General Macro', () => {
+        describe('Error Cases (General Macro)', () => {
             // {{}}
             it('[Error] should throw an error for empty macro', async () => {
                 const input = '{{}}';
@@ -51,8 +51,8 @@ describe('MacroParser', () => {
                     { name: 'MismatchedTokenException', message: 'Expecting token of type --> Macro.Identifier <-- but found --> \'}}\' <--' },
                 ];
 
-                expect(errors).toEqual(expectedErrors);
                 expect(macroCst).toBeUndefined();
+                expect(errors).toEqual(expectedErrors);
             });
             // {{§!#&blah}}
             it('[Error] should throw an error for invalid identifier', async () => {
@@ -63,8 +63,8 @@ describe('MacroParser', () => {
                     { name: 'MismatchedTokenException', message: 'Expecting token of type --> Macro.Identifier <-- but found --> \'!\' <--' },
                 ];
 
-                expect(errors).toEqual(expectedErrors);
                 expect(macroCst).toBeUndefined();
+                expect(errors).toEqual(expectedErrors);
             });
             // {{user
             it('[Error] should throw an error for incomplete macro', async () => {
@@ -75,13 +75,14 @@ describe('MacroParser', () => {
                     { name: 'MismatchedTokenException', message: 'Expecting token of type --> Macro.End <-- but found --> \'\' <--' },
                 ];
 
-                expect(errors).toEqual(expectedErrors);
                 expect(macroCst).toBeUndefined();
+                expect(errors).toEqual(expectedErrors);
             });
         });
     });
 
     describe('Arguments Handling', () => {
+        // {{getvar::myvar}}
         it('should parse macros with double-colon argument', async () => {
             const input = '{{getvar::myvar}}';
             const macroCst = await runParser(input, {
@@ -98,7 +99,8 @@ describe('MacroParser', () => {
             });
         });
 
-        it('should parse macros with single colon arguments', async () => {
+        // {{roll:3d20}}
+        it('should parse macros with single colon argument', async () => {
             const input = '{{roll:3d20}}';
             const macroCst = await runParser(input, {
                 flattenKeys: ['arguments.argument'],
@@ -114,7 +116,8 @@ describe('MacroParser', () => {
             });
         });
 
-        it('should parse macros with double-colon arguments', async () => {
+        // {{setvar::myvar::value}}
+        it('should parse macros with multiple double-colon arguments', async () => {
             const input = '{{setvar::myvar::value}}';
             const macroCst = await runParser(input, {
                 flattenKeys: ['arguments.argument'],
@@ -131,6 +134,7 @@ describe('MacroParser', () => {
             });
         });
 
+        // {{something::  spaced  }}
         it('should strip spaces around arguments', async () => {
             const input = '{{something::  spaced  }}';
             const macroCst = await runParser(input, {
@@ -144,6 +148,57 @@ describe('MacroParser', () => {
                 'Macro.End': '}}',
             });
         });
+
+        // {{something::with:single:colons}}
+        it('should treat single colons as part of the argument with double-colon separator', async () => {
+            const input = '{{something::with:single:colons}}';
+            const macroCst = await runParser(input, {
+                flattenKeys: ['arguments.argument'],
+                ignoreKeys: ['arguments.Args.DoubleColon'],
+            });
+            expect(macroCst).toEqual({
+                'Macro.Start': '{{',
+                'Macro.Identifier': 'something',
+                'arguments': {
+                    'separator': '::',
+                    'argument': 'with:single:colons',
+                },
+                'Macro.End': '}}',
+            });
+        });
+
+        // {{legacy:something:else}}
+        it('should treat single colons as part of the argument even with colon separator', async () => {
+            const input = '{{legacy:something:else}}';
+            const macroCst = await runParser(input, {
+                flattenKeys: ['arguments.argument'],
+                ignoreKeys: ['arguments.separator', 'arguments.Args.Colon'],
+            });
+            expect(macroCst).toEqual({
+                'Macro.Start': '{{',
+                'Macro.Identifier': 'legacy',
+                'arguments': { 'argument': 'something:else' },
+                'Macro.End': '}}',
+            });
+        });
+
+        describe('Error Cases (Arguments Handling)', () => {
+            // {{something::}}
+            it('[Error] should throw an error for double-colon without a value', async () => {
+                const input = '{{something::}}';
+                const { macroCst, errors } = await runParserAndGetErrors(input);
+
+                const expectedErrors = [
+                    {
+                        name: 'EarlyExitException', message: expect.stringMatching(/^Expecting: expecting at least one iteration which starts with one of these possible Token sequences:/),
+                    },
+                ];
+
+                expect(macroCst).toBeUndefined();
+                expect(errors).toEqual(expectedErrors);
+            });
+        });
+
     });
 
     describe('Nested Macros', () => {

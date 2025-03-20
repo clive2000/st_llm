@@ -35,25 +35,23 @@ class MacroParser extends CstParser {
 
         // Arguments Parsing
         $.arguments = $.RULE('arguments', () => {
-            // Remember the separator being used, it needs to stay consistent
-            /** @type {import('../../lib/chevrotain.js').IToken} */
-            let separator;
             $.OR([
-                { ALT: () => separator = $.CONSUME(Tokens.Args.DoubleColon, { LABEL: 'separator' }) },
-                { ALT: () => separator = $.CONSUME(Tokens.Args.Colon, { LABEL: 'separator' }) },
+                { ALT: () => $.CONSUME(Tokens.Args.DoubleColon, { LABEL: 'separator' }) },
+                { ALT: () => $.CONSUME(Tokens.Args.Colon, { LABEL: 'separator' }) },
             ]);
             $.AT_LEAST_ONE_SEP({
-                SEP: separator.tokenType,
+                SEP: Tokens.Args.DoubleColon,
                 DEF: () => $.SUBRULE($.argument),
             });
         });
 
         $.argument = $.RULE('argument', () => {
-            $.MANY(() => {
+            $.AT_LEAST_ONE(() => {
                 $.OR([
                     { ALT: () => $.SUBRULE($.macro) }, // Nested Macros
                     { ALT: () => $.CONSUME(Tokens.Identifier) },
                     { ALT: () => $.CONSUME(Tokens.Unknown) },
+                    { ALT: () => $.CONSUME(Tokens.Args.Colon) },
                 ]);
             });
         });
