@@ -332,7 +332,7 @@ try {
     // 1. Create default config files
     createDefaultFiles();
     // 2. Copy transformers WASM binaries from node_modules
-    copyWasmFiles();
+    // copyWasmFiles();
     // 3. Add missing config values
     addMissingConfigValues();
 } catch (error) {

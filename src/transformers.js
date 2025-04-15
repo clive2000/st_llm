@@ -3,16 +3,16 @@ import fs from 'node:fs';
 import process from 'node:process';
 import { Buffer } from 'node:buffer';
 
-import { pipeline, env, RawImage } from 'sillytavern-transformers';
+import { pipeline, env, RawImage } from '@huggingface/transformers';
 import { getConfigValue } from './util.js';
 
 configureTransformers();
 
 function configureTransformers() {
     // Limit the number of threads to 1 to avoid issues on Android
-    env.backends.onnx.wasm.numThreads = 1;
+    // env.backends.onnx.wasm.numThreads = 1;
     // Use WASM from a local folder to avoid CDN connections
-    env.backends.onnx.wasm.wasmPaths = path.join(process.cwd(), 'dist') + path.sep;
+    // env.backends.onnx.wasm.wasmPaths = path.join(process.cwd(), 'dist') + path.sep;
 }
 
 const tasks = {
@@ -115,9 +115,9 @@ async function migrateCacheToDataDir() {
 
 /**
  * Gets the transformers.js pipeline for a given task.
- * @param {import('sillytavern-transformers').PipelineType} task The task to get the pipeline for
+ * @param {import('@huggingface/transformers').PipelineType} task The task to get the pipeline for
  * @param {string} forceModel The model to use for the pipeline, if any
- * @returns {Promise<import('sillytavern-transformers').Pipeline>} The transformers.js pipeline
+ * @returns {Promise<import('@huggingface/transformers').Pipeline>} The transformers.js pipeline
  */
 export async function getPipeline(task, forceModel = '') {
     await migrateCacheToDataDir();
