@@ -8,6 +8,7 @@ import { POPUP_TYPE, callGenericPopup } from './popup.js';
 import { t } from './i18n.js';
 import { accountStorage } from './util/AccountStorage.js';
 import { localizePagination, PAGINATION_TEMPLATE } from './utils.js';
+import { onTabbyLoadModelClick, onTabbyParameterEditorClick, onTabbyUnloadModelClick, fetchTabbyModels } from './tabbyModelLoader.js';
 
 let mancerModels = [];
 let togetherModels = [];
@@ -944,6 +945,11 @@ export function initTextGenModels() {
     $('#tabby_download_model').on('click', downloadTabbyModel);
     $('#tabby_model').on('change', onTabbyModelSelect);
     $('#featherless_model').on('change', () => onFeatherlessModelSelect(String($('#featherless_model').val())));
+
+    $('#tabby_load_model_button').on('click', async () => await onTabbyLoadModelClick());
+    $('#tabby_unload_model_button').on('click', async () => await onTabbyUnloadModelClick());
+    $('#tabby_parameter_editor_button').on('click', async () => await onTabbyParameterEditorClick());
+    $('#tabby_reload_model_list_button').on('click', async () => await fetchTabbyModels());
 
     const providersSelect = $('.openrouter_providers');
     for (const provider of OPENROUTER_PROVIDERS) {

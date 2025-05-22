@@ -627,6 +627,133 @@ tabby.post('/download', async function (request, response) {
     }
 });
 
+tabby.post('/unload', async function (request, response) {
+    try {
+        const baseUrl = String(request.body.api_server).replace(/\/$/, '');
+
+        const args = {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(request.body),
+            timeout: 0,
+        };
+
+        setAdditionalHeaders(request, args, baseUrl);
+
+        // Check key permissions
+        const permissionResponse = await fetch(`${baseUrl}/v1/auth/permission`, {
+            headers: args.headers,
+        });
+
+        if (permissionResponse.ok) {
+            /** @type {any} */
+            const permissionJson = await permissionResponse.json();
+
+            if (permissionJson['permission'] !== 'admin') {
+                return response.status(403).send({ error: true });
+            }
+        } else {
+            console.error('API Permission error:', permissionResponse.status, permissionResponse.statusText);
+            return response.status(500).send({ error: true });
+        }
+
+        const fetchResponse = await fetch(`${baseUrl}/v1/model/unload`, args);
+
+        if (!fetchResponse.ok) {
+            console.error('Tabby unload error:', fetchResponse.status, fetchResponse.statusText);
+            return response.status(500).send({ error: true });
+        }
+
+        return response.send({ ok: true });
+    } catch (error) {
+        console.error(error);
+        return response.sendStatus(500);
+    }
+});
+
+tabby.post('/load', async function (request, response) {
+    try {
+        const baseUrl = String(request.body.api_server).replace(/\/$/, '');
+
+        const args = {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(request.body),
+            timeout: 0,
+        };
+        let tempArgs = { ...args };
+        let tempBody = JSON.parse(tempArgs.body);
+        const toTabby = JSON.parse(tempBody.toTabby);
+        delete tempBody.api_type
+        delete tempBody.api_server
+        tempArgs.body = JSON.stringify(toTabby)
+
+        setAdditionalHeaders(request, tempArgs, baseUrl);
+        console.log('this is what we are sending to tabby, including all headers..')
+        console.log(tempArgs);
+
+        // Check key permissions
+        const permissionResponse = await fetch(`${baseUrl}/v1/auth/permission`, {
+            headers: args.headers,
+        });
+
+        if (permissionResponse.ok) {
+            /** @type {any} */
+            const permissionJson = await permissionResponse.json();
+
+            if (permissionJson['permission'] !== 'admin') {
+                return response.status(403).send({ error: true });
+            }
+        } else {
+            console.error('API Permission error:', permissionResponse.status, permissionResponse.statusText);
+            return response.status(500).send({ error: true });
+        }
+
+        const fetchResponse = await fetch(`${baseUrl}/v1/model/load`, tempArgs);
+
+        if (!fetchResponse.ok) {
+            console.error('Tabby load error:', fetchResponse.status, fetchResponse.statusText);
+            return response.status(500).send({ error: true });
+        }
+
+        if (!fetchResponse.body) {
+            console.error('No response body received from LLM server');
+            return response.status(500).send({ error: true });
+        }
+
+        // Set headers for Server-Sent Events
+        response.set({
+            'Content-Type': 'text/event-stream',
+            'Cache-Control': 'no-cache',
+            'Connection': 'keep-alive',
+        });
+
+        // Pipe the stream with explicit flushing
+        fetchResponse.body.on('data', (chunk) => {
+            console.log('Stream chunk:', chunk.toString());
+            response.write(chunk);
+            response.flush(); // Force flush to client
+        });
+
+        // Handle stream errors
+        fetchResponse.body.on('error', (err) => {
+            console.error('Stream error:', err);
+            response.status(500).send({ error: true });
+        });
+
+        fetchResponse.body.on('end', () => {
+            console.log('Stream closed');
+            response.end();
+        });
+
+    } catch (error) {
+        console.error(error);
+        return response.sendStatus(500);
+    }
+});
+
+
+
 router.use('/ollama', ollama);
 router.use('/llamacpp', llamacpp);
 router.use('/tabby', tabby);

@@ -1,0 +1,96 @@
+<div id="tabby_loader_popup">
+    <div>
+        <h3><strong data-i18n="">Set Parameters</strong>
+            <a href="https://github.com/theroyallab/tabbyAPI" class="notes-link" target="_blank">
+                <span class="note-link-span">?</span>
+            </a>
+        </h3>
+
+        <small class="flex-container extensions_info justifyCenter">
+            Set Parameters for Loading a Model
+        </small>
+        <hr />
+
+        Main Model
+        <div class="flex-container">
+            <div class="flex1">
+                <label for="max_seq_len">
+                    <small data-i18n="Max Seq Len">Max Seq Len</small>
+                </label>
+                <input name="max_seq_len" class="text_pole" type="text" placeholder="ex: 4096" />
+            </div>
+            <div class="flex1">
+                <label for="cache_size">
+                    <small data-i18n="Cache Size">Cache Size</small>
+                </label>
+                <input name="cache_size" class="text_pole" type="text" placeholder="Max Seq Len" />
+            </div>
+            <div class="flex1">
+                <label for="max_batch_size">
+                    <small data-i18n="Max Batch Size">Max Batch Size</small>
+                </label>
+                <input name="max_batch_size" class="text_pole" type="text" placeholder="ex: 512" />
+            </div>
+        </div>
+        <div class="flex-container">
+            <div class="flex1">
+                <label for="rope_scale">
+                    <small data-i18n="Rope Scale">Rope Scale</small>
+                </label>
+                <input name="rope_scale" class="text_pole" type="text" placeholder="ex: 1.0" />
+            </div>
+            <div class="flex1">
+                <label for="rope_alpha">
+                    <small data-i18n="Rope Alpha">Rope Alpha</small>
+                </label>
+                <input name="rope_alpha" class="text_pole" type="text" placeholder="ex: 1.0" />
+            </div>
+        </div>
+        Draft Model
+        <div class="flex-container">
+            <div class="flex1">
+                <label for="rope_scale">
+                    <small data-i18n="Rope Scale">Rope Scale</small>
+                </label>
+                <input name="draft_rope_scale" class="text_pole" type="text" placeholder="ex: 1.0" />
+            </div>
+            <div class="flex1">
+                <label for="rope_alpha">
+                    <small data-i18n="Rope Alpha">Rope Alpha</small>
+                </label>
+                <input name="draft_rope_alpha" class="text_pole" type="text" placeholder="ex: 1.0" />
+            </div>
+        </div>
+
+        <!-- Container for GPU Split and other options -->
+        Loader Options
+        <div class="flex-container padded-loader-setting-category">
+            <div class="flex-container flexFlowColumn flexNoGap alignitemsstart">
+                <small class="justifyCenter">GPU Split</small>
+                <label class="checkbox flex-container">
+                    <input type="checkbox" name="gpu_split_auto" />
+                    <span data-i18n="Auto Split">Auto Split</span>
+                </label>
+                <input name="gpu_split_value" class="text_pole" type="text" placeholder="ex. [20.6, 24]" />
+            </div>
+
+            <div class="flex-container flexFlowColumn flexNoGap alignitemsstart padded-loader-setting-block">
+                <small>Other Options</small>
+                <label class="checkbox flex-container">
+                    <input type="checkbox" name="fasttensors" />
+                    <span data-i18n="FastTensors">FastTensors</span>
+                </label>
+            </div>
+
+            <div class="flex-container flexFlowColumn flexNoGap alignitemsstart">
+                <small class="justifyCenter">Cache Mode</small>
+                <select name="cache_mode_select" class="margin0">
+                    <option value="0">FP16</option>
+                    <option value="1">Q4</option>
+                    <option value="2">Q6</option>
+                    <option value="3">Q8</option>
+                </select>
+            </div>
+        </div>
+    </div>
+</div>

@@ -140,7 +140,7 @@
                                         <div data-preset-manager-import="novel" class="margin0 menu_button_icon menu_button" title="Import preset" data-i18n="[title]Import preset">
                                             <i class="fa-fw fa-solid fa-file-import"></i>
                                         </div>
-                                        <div data-preset-manager-export="novel"  class="margin0 menu_button_icon menu_button" title="Export preset" data-i18n="[title]Export preset">
+                                        <div data-preset-manager-export="novel" class="margin0 menu_button_icon menu_button" title="Export preset" data-i18n="[title]Export preset">
                                             <i class="fa-fw fa-solid fa-file-export"></i>
                                         </div>
                                         <div data-preset-manager-delete="novel" class="margin0 menu_button_icon menu_button" title="Delete the preset" data-i18n="[title]Delete the preset">
@@ -663,7 +663,7 @@
                                 <div data-source="openrouter" class="range-block">
                                     <div class="range-block-title" title="Allow compressing requests by removing messages from the middle of the prompt.">
                                         <span data-i18n="Middle-out Transform">Middle-out Transform</span>
-                                        <a href="https://openrouter.ai/docs/transforms" target="_blank" rel="noreferrer noopener"  class="note-link-span fa-solid fa-circle-question"></a>
+                                        <a href="https://openrouter.ai/docs/transforms" target="_blank" rel="noreferrer noopener" class="note-link-span fa-solid fa-circle-question"></a>
                                     </div>
                                     <div class="wide100p">
                                         <select id="openrouter_middleout" class="text_pole">
@@ -2678,35 +2678,67 @@
                                     <small data-i18n="Example: http://127.0.0.1:5000">Example: http://127.0.0.1:5000</small>
                                     <input id="tabby_api_url_text" class="text_pole wide100p" value="" autocomplete="off" data-server-history="tabby">
                                 </div>
-                                <div class="flex1">
-                                    <h4>
-                                        <span data-i18n="Tabby Model">Tabby Model</span>
-                                    </h4>
-                                    <select id="tabby_model">
-                                        <option value="" data-i18n="-- Connect to the API --">
-                                            -- Connect to the API --
-                                        </option>
-                                    </select>
-                                    <div class="marginTopBot5">
-                                        <i class="fa-solid fa-flask"></i>
-                                        <span>Experimental feature. Use at your own risk.</span>
+                                <div class="inline-drawer">
+                                    <div class="gap10h5v inline-drawer-header inline-drawer-toggle widthFitContent standoutHeader">
+                                        <div class="inline-drawer-icon fa-solid fa-circle-chevron-down"></div>
+                                        <strong>Tabby Model Management</strong>
                                     </div>
-                                    <div class="marginTopBot5">
-                                        <small>
-                                            <i class="fa-solid fa-lightbulb"></i>
-                                            &nbsp;
-                                            <code>inline_model_loading: True</code>
-                                            <span data-i18n="must be set in Tabby's config.yml to switch models.">
-                                                must be set in Tabby's config.yml to switch models.
-                                            </span>
-                                            <b data-i18n="Use an admin API key.">
-                                                Use an admin API key.
-                                            </b>
-                                        </small>
-                                    </div>
-                                    <div id="tabby_download_model" class="menu_button menu_button_icon">
-                                        <i class="fa-solid fa-download"></i>
-                                        <span data-i18n="Download">Download</span>
+                                    <div class="inline-drawer-content">
+
+                                        <div class="">
+                                            <small>
+                                                <b>To switch models:</b>
+                                                <ol class="marginTop5">
+                                                    <li>
+                                                        <code>inline_model_loading: True</code> must be set in Tabby's config.yml
+                                                    </li>
+                                                    <li>
+                                                        Connect with an admin API key
+                                                    </li>
+                                                </ol>
+                                            </small>
+                                        </div>
+                                        <h4 class="alignItemsCenter flex-container">
+                                            <span data-i18n="Tabby Model">Inline Model Swap</span>
+                                        </h4>
+                                        <small>The model selected here will be loaded and used in the next generation request.</small>
+                                        <select id="tabby_model">
+                                            <option value="" data-i18n="-- Connect to the API --">
+                                                -- Connect to the API --
+                                            </option>
+                                        </select>
+
+                                        <div class="alignItemsStart flex-container flexFlowColumn">
+                                            <h4 data-i18n="Tabby API key" class="marginTop10">
+                                                Model Select
+                                                <i class="fa-solid fa-flask margin5"></i>
+                                                <span class="redOverlayGlow" data-i18n="Experimental feature. Use at your own risk.">Experimental feature. Use at your own risk.</span>
+                                            </h4>
+                                            <div class="flex-container gap5px">
+                                                <div id="tabby_load_model_button" class="fa-lg menu_button menu_button_icon heightFitContent interactable" title="Load model" data-i18n="[title]Load model" tabindex="0">
+                                                    <i class="fa-solid fa-play"></i>
+                                                </div>
+                                                <div id="tabby_unload_model_button" class="fa-lg menu_button menu_button_icon heightFitContent interactable" title="Unload model" data-i18n="[title]Unload model" tabindex="0">
+                                                    <i class="fa-solid fa-xmark"></i>
+                                                </div>
+                                                <div id="tabby_reload_model_list_button" class="fa-lg menu_button menu_button_icon heightFitContent interactable" title="Refresh model list" data-i18n="[title]Refresh model list" tabindex="0">
+                                                    <i class="fa-solid fa-arrows-rotate"></i>
+                                                </div>
+                                                <div id="tabby_parameter_editor_button" class="fa-lg menu_button menu_button_icon heightFitContent interactable" title="Open parameter editor" data-i18n="[title]Open parameter editor" tabindex="0">
+                                                    <i class="fa-solid fa-gear"></i>
+                                                </div>
+                                                <div id="tabby_download_model" class="fa-lg menu_button menu_button_icon heightFitContent interactable" title="Download model from HuggingFace" data-i18n="[title]Download model from HuggingFace" tabindex="0">
+                                                    <i class="fa-solid fa-cloud-arrow-down"></i>
+                                                </div>
+                                            </div>
+                                            <div class="">
+                                                <input id="tabby_load_model_list" name="tabby_load_model_list" class="text_pole ui-autocomplete-input" placeholder="Model name here" maxlength="100" size="35" value="" autocomplete="off">
+                                                <input id="tabby_load_draft_model_list" name="tabby_load_draft_model_list" class="text_pole ui-autocomplete-input" placeholder="Draft model name here" maxlength="100" size="35" value="" autocomplete="off">
+                                                <div id="loading_progress_container" class="progress_container">
+                                                    <div id="loading_progressbar"></div>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -3672,7 +3704,7 @@
                                     <input id="instruct_bind_to_context" type="checkbox" style="display:none;" />
                                     <small><i class="fa-solid fa-link menu_button margin0"></i></small>
                                 </label>
-                                <label id="instruct_enabled_label"for="instruct_enabled" class="checkbox_label flex1" title="Enable Instruct Mode" data-i18n="[title]instruct_enabled">
+                                <label id="instruct_enabled_label" for="instruct_enabled" class="checkbox_label flex1" title="Enable Instruct Mode" data-i18n="[title]instruct_enabled">
                                     <input id="instruct_enabled" type="checkbox" style="display:none;" />
                                     <small><i class="fa-solid fa-power-off menu_button togglable margin0"></i></small>
                                 </label>
@@ -5120,7 +5152,7 @@
                 <div class="flex-container wide100p alignitemscenter spaceBetween flexNoGap">
                     <div class="flex-container alignItemsBaseline wide100p">
                         <div class="flex1 flex-container alignItemsBaseline">
-                            <h3 class="margin0" >
+                            <h3 class="margin0">
                                 <span data-i18n="Persona Management">Persona Management</span>
                                 <a href="https://docs.sillytavern.app/usage/core-concepts/personas/" target="_blank">
                                     <span class="fa-solid fa-circle-question note-link-span"></span>
@@ -6529,7 +6561,7 @@
                                 <span id="completion_prompt_manager_popup_entry_source"></span>
                             </div>
                             <textarea id="completion_prompt_manager_popup_entry_form_prompt" class="text_pole" name="prompt" placeholder="The prompt to be sent." data-i18n="[placeholder]The prompt to be sent."></textarea>
-                        </textarea>
+                            </textarea>
                         </div>
                         <div class="completion_prompt_manager_popup_entry_form_footer">
                             <a id="completion_prompt_manager_popup_entry_form_close" title="close" data-i18n="[title]close" class="fa-solid fa-close menu_button"></a>
