@@ -684,9 +684,9 @@ tabby.post('/load', async function (request, response) {
         let tempArgs = { ...args };
         let tempBody = JSON.parse(tempArgs.body);
         const toTabby = JSON.parse(tempBody.toTabby);
-        delete tempBody.api_type
-        delete tempBody.api_server
-        tempArgs.body = JSON.stringify(toTabby)
+        delete tempBody.api_type;
+        delete tempBody.api_server;
+        tempArgs.body = JSON.stringify(toTabby);
 
         setAdditionalHeaders(request, tempArgs, baseUrl);
         //console.log('this is what we are sending to tabby, including all headers..')

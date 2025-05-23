@@ -1,4 +1,4 @@
-import { eventSource, event_types, callPopup, getRequestHeaders, online_status, saveSettingsDebounced, settings } from '../script.js';
+import { eventSource, event_types, callPopup, getRequestHeaders, online_status, saveSettingsDebounced } from '../script.js';
 import { textgen_types, textgenerationwebui_settings, getTextGenServer } from '../scripts/textgen-settings.js';
 import { SmoothEventSourceStream } from '../scripts/sse-stream.js';
 
