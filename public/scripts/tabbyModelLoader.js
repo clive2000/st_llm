@@ -1,6 +1,5 @@
 import { eventSource, event_types, callPopup, getRequestHeaders, online_status, saveSettingsDebounced, settings } from '../script.js';
 import { textgen_types, textgenerationwebui_settings, getTextGenServer } from '../scripts/textgen-settings.js';
-//import { SECRET_KEYS, readSecretState, findSecret, secret_state } from '../scripts/secrets.js';
 import { SmoothEventSourceStream } from '../scripts/sse-stream.js';
 
 // Used for settings
@@ -48,32 +47,9 @@ function verifyTabby(logError = true) {
     return result;
 }
 
-async function getTabbyAuth() {
-
-    let authToken = null;
-
-    if (!authToken) {
-        try {
-            authToken = localStorage.getItem('Tabby_Admin'); //This needs to be removed and integrated with the actual key retrieval process
-            if (!authToken) {
-                console.error('Tabby Admin key not found in localStorage. Trying to fetch from secret state.');
-                //  authToken = await findSecret('api_key_tabby');
-                console.warn(authToken);
-            }
-            if (!authToken) {
-                console.error('Tabby Admin key not found. Please make sure allowKeysExposure is true in config.conf and an API key is set for TabbyAPI.');
-            }
-        } catch (error) {
-            console.error(`TabbyLoader: ${error}`);
-            console.error('Admin key error: Please make sure allowKeysExposure is true in config.conf and an API key is set for TabbyAPI.');
-        }
-    }
-    return authToken;
-}
-
 // Fetch the model list for autocomplete population
 export async function fetchTabbyModels() {
-    console.warn('fetchTabbyModels loaded');
+    console.debug('fetchTabbyModels loaded');
     if (!verifyTabby(false)) {
         console.error('TabbyLoader: Could not connect to TabbyAPI');
         return;
@@ -92,7 +68,6 @@ export async function fetchTabbyModels() {
             }),
         });
 
-        console.warn(response);
         if (response.ok) {
             modelsFromResponse = await response.json();
         } else {
@@ -102,10 +77,10 @@ export async function fetchTabbyModels() {
 
         modelsFromResponse = modelsFromResponse.data.map((e) => e.id);
 
-        console.warn(modelsFromResponse);
+        console.debug(modelsFromResponse);
 
         models = modelsFromResponse;
-        console.warn(models);
+        console.debug(models);
 
         $('#tabby_load_model_list')
             .autocomplete({
@@ -139,8 +114,8 @@ export async function onTabbyLoadModelClick() {
     const draftModelValue = $('#tabby_load_draft_model_list').val();
 
     if (!modelValue || !models.includes(modelValue)) {
-        console.warn(models);
-        console.warn(modelValue);
+        console.debug(models);
+        console.debug(modelValue);
         toastr.error('TabbyLoader: Please make sure the model name is spelled correctly before loading!');
 
         return;
@@ -205,7 +180,7 @@ export async function onTabbyLoadModelClick() {
             });
         } else {
             $('#loading_progressbar').progressbar('value', 0); // Reset if already initialized
-            console.warn('Progressbar already initialized, resetting value');
+            console.debug('Progressbar already initialized, resetting value');
         }
 
         // Ensure single .ui-progressbar-value and initial state
@@ -221,7 +196,6 @@ export async function onTabbyLoadModelClick() {
 
         async function readStream(reader, progressContainer, soFar, times) {
             const { value, done } = await reader.read();
-            console.warn('Stream read:', { value, done, timestamp: new Date().toISOString() });
             if (done && soFar === times) {
                 progressContainer.css('display', 'none');
                 $('#loading_progressbar').progressbar('value', 0);
@@ -238,8 +212,6 @@ export async function onTabbyLoadModelClick() {
             let packet;
             try {
                 packet = JSON.parse(value.data);
-                console.log('Parsed packet:', packet);
-                console.log('Packet status:', packet.status);
             } catch (error) {
                 console.error('Failed to parse stream packet:', error, value);
                 requestAnimationFrame(() => readStream(reader, progressContainer, soFar, times));
@@ -280,14 +252,12 @@ export async function onTabbyLoadModelClick() {
                     display: 'block',
                     width: `${roundedPercent}%`,
                 });
-                console.log(`Progress set to: ${roundedPercent}% for ${modelLabel} at`, new Date().toISOString());
             }
 
             requestAnimationFrame(() => readStream(reader, progressContainer, soFar, times));
         }
 
         if (response.ok) {
-            console.warn('saw ok response..hope for stream..');
             if (!response.body) {
                 console.error('No response body received');
                 toastr.error('TabbyLoader: No stream received from server.');
@@ -333,7 +303,6 @@ export async function onTabbyUnloadModelClick() {
         }),
     });
 
-    console.warn(response);
     if (response.ok) {
         toastr.info('Tabby model was unloaded.');
     } else {
@@ -345,7 +314,7 @@ export async function onTabbyUnloadModelClick() {
 }
 
 export async function onTabbyParameterEditorClick() {
-    console.warn('onParameterEditorClick');
+    console.debug('onParameterEditorClick');
     const parameterHtml = $(await $.get(`${tempaltesFolderPath}/tabbyModelParameters.html`));
     parameterHtml
         .find('input[name="max_seq_len"]')

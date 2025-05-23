@@ -689,8 +689,8 @@ tabby.post('/load', async function (request, response) {
         tempArgs.body = JSON.stringify(toTabby)
 
         setAdditionalHeaders(request, tempArgs, baseUrl);
-        console.log('this is what we are sending to tabby, including all headers..')
-        console.log(tempArgs);
+        //console.log('this is what we are sending to tabby, including all headers..')
+        //console.log(tempArgs);
 
         // Check key permissions
         const permissionResponse = await fetch(`${baseUrl}/v1/auth/permission`, {
@@ -730,7 +730,7 @@ tabby.post('/load', async function (request, response) {
 
         // Pipe the stream with explicit flushing
         fetchResponse.body.on('data', (chunk) => {
-            console.log('Stream chunk:', chunk.toString());
+            //console.log('Stream chunk:', chunk.toString());
             response.write(chunk);
             response.flush(); // Force flush to client
         });
