@@ -3875,16 +3875,16 @@ function removeLastMessage() {
 
 function collapseConsecutiveMessagesInPrompt(prompt, instruct) {
     if (!instruct.enabled) {
-        console.warn('Instruct mode is disabled; returning original prompt');
+        console.debug('Instruct mode is disabled; returning original prompt');
         return prompt;
     }
 
     if (!instruct.collapse_same_entity) {
-        console.warn('collapse_same_entity is false; returning original prompt');
+        console.debug('collapse_same_entity is false; returning original prompt');
         return prompt;
     }
 
-    console.warn('Collapsing consecutive messages in prompt');
+    console.debug('Collapsing consecutive messages in prompt');
 
     // Define prefixes and suffixes
     const prefixes = {
@@ -3905,7 +3905,7 @@ function collapseConsecutiveMessagesInPrompt(prompt, instruct) {
     const allPrefixesEmpty = Object.values(prefixes).every(val => !val);
     const allSuffixesEmpty = Object.values(suffixes).every(val => !val);
     if (allPrefixesEmpty && allSuffixesEmpty) {
-        console.warn('All prefixes and suffixes are empty; returning original prompt', {
+        console.debug('All prefixes and suffixes are empty; returning original prompt', {
             system_sequence: prefixes.system,
             system_sequence_prefix: prefixes.system_first,
             input_sequence: prefixes.user,
@@ -3939,34 +3939,34 @@ function collapseConsecutiveMessagesInPrompt(prompt, instruct) {
     let match;
     let lastIndex = 0;
 
-    console.warn('Parsing prompt with regex:', messageRegex);
+    console.debug('Parsing prompt with regex:', messageRegex);
     while ((match = messageRegex.exec(prompt)) !== null) {
         const [, prefix, content, suffix = ''] = match;
         const prefixStart = match.index;
         const gap = prompt.slice(lastIndex, prefixStart);
         if (gap) {
-            console.warn(`Found gap between messages: ${JSON.stringify(gap)}`);
+            console.debug(`Found gap between messages: ${JSON.stringify(gap)}`);
         }
         messages.push({ prefix, content: content.trim(), suffix, fullMatch: match[0], gap });
         lastIndex = match.index + match[0].length;
-        console.warn(`Matched message: prefix=${prefix}, content=${content}, suffix=${suffix}`);
+        console.debug(`Matched message: prefix=${prefix}, content=${content}, suffix=${suffix}`);
     }
 
     // Capture any trailing text
     if (lastIndex < prompt.length) {
         const trailing = prompt.slice(lastIndex);
-        console.warn(`Found trailing text: ${JSON.stringify(trailing)}`);
+        console.debug(`Found trailing text: ${JSON.stringify(trailing)}`);
         // Check if trailing text starts with a prefix
         const trailingMatch = trailing.match(new RegExp(`^(${prefixRegexStr})([\\s\\S]*?)(?=(?:${suffixRegexStr}|${prefixRegexStr}|$))((?:${suffixRegexStr})?)`));
         if (trailingMatch) {
             const [, prefix, content, suffix = ''] = trailingMatch;
             messages.push({ prefix, content: content.trim(), suffix, fullMatch: trailingMatch[0], gap: '' });
-            console.warn(`Matched trailing message: prefix=${prefix}, content=${content}, suffix=${suffix}`);
+            console.debug(`Matched trailing message: prefix=${prefix}, content=${content}, suffix=${suffix}`);
         }
     }
 
     if (messages.length === 0) {
-        console.warn('No messages parsed; returning original prompt');
+        console.debug('No messages parsed; returning original prompt');
         return prompt;
     }
 
@@ -3993,7 +3993,7 @@ function collapseConsecutiveMessagesInPrompt(prompt, instruct) {
                 const nextEffectivePrefix = (j === 0 && next.prefix === prefixes.system_first) ? prefixes.system : next.prefix;
 
                 if (nextEffectivePrefix !== effectivePrefix) {
-                    console.warn(`Stopping collapse at index ${j}: effectivePrefix=${effectivePrefix}, nextEffectivePrefix=${nextEffectivePrefix}`);
+                    console.debug(`Stopping collapse at index ${j}: effectivePrefix=${effectivePrefix}, nextEffectivePrefix=${nextEffectivePrefix}`);
                     break;
                 }
 
@@ -4015,14 +4015,14 @@ function collapseConsecutiveMessagesInPrompt(prompt, instruct) {
         // Create the collapsed message
         const combinedMessage = `${current.prefix}${prefixNewline}${joinedContent}${currentSuffix}`;
         collapsedMessages.push(combinedMessage);
-        console.warn(`Collapsed message at index ${i}: ${combinedMessage}`);
+        console.debug(`Collapsed message at index ${i}: ${combinedMessage}`);
         i = j; // Skip the combined messages
     }
 
     // Reconstruct the prompt without extra newlines
     const collapsedPrompt = collapsedMessages.join('');
-    console.warn('Before collapsing:', prompt);
-    console.warn('After collapsing:', collapsedPrompt);
+    console.debug('Before collapsing:', prompt);
+    console.debug('After collapsing:', collapsedPrompt);
     return collapsedPrompt;
 }
 
