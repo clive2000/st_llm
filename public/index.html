@@ -140,7 +140,7 @@
                                         <div data-preset-manager-import="novel" class="margin0 menu_button_icon menu_button" title="Import preset" data-i18n="[title]Import preset">
                                             <i class="fa-fw fa-solid fa-file-import"></i>
                                         </div>
-                                        <div data-preset-manager-export="novel"  class="margin0 menu_button_icon menu_button" title="Export preset" data-i18n="[title]Export preset">
+                                        <div data-preset-manager-export="novel" class="margin0 menu_button_icon menu_button" title="Export preset" data-i18n="[title]Export preset">
                                             <i class="fa-fw fa-solid fa-file-export"></i>
                                         </div>
                                         <div data-preset-manager-delete="novel" class="margin0 menu_button_icon menu_button" title="Delete the preset" data-i18n="[title]Delete the preset">
@@ -663,7 +663,7 @@
                                 <div data-source="openrouter" class="range-block">
                                     <div class="range-block-title" title="Allow compressing requests by removing messages from the middle of the prompt.">
                                         <span data-i18n="Middle-out Transform">Middle-out Transform</span>
-                                        <a href="https://openrouter.ai/docs/transforms" target="_blank" rel="noreferrer noopener"  class="note-link-span fa-solid fa-circle-question"></a>
+                                        <a href="https://openrouter.ai/docs/transforms" target="_blank" rel="noreferrer noopener" class="note-link-span fa-solid fa-circle-question"></a>
                                     </div>
                                     <div class="wide100p">
                                         <select id="openrouter_middleout" class="text_pole">
@@ -3718,7 +3718,7 @@
                                     <input id="instruct_bind_to_context" type="checkbox" style="display:none;" />
                                     <small><i class="fa-solid fa-link menu_button margin0"></i></small>
                                 </label>
-                                <label id="instruct_enabled_label"for="instruct_enabled" class="checkbox_label flex1" title="Enable Instruct Mode" data-i18n="[title]instruct_enabled">
+                                <label id="instruct_enabled_label" for="instruct_enabled" class="checkbox_label flex1" title="Enable Instruct Mode" data-i18n="[title]instruct_enabled">
                                     <input id="instruct_enabled" type="checkbox" style="display:none;" />
                                     <small><i class="fa-solid fa-power-off menu_button togglable margin0"></i></small>
                                 </label>
@@ -3761,6 +3761,10 @@
                                 <label for="instruct_skip_examples" class="checkbox_label">
                                     <input id="instruct_skip_examples" type="checkbox" />
                                     <small data-i18n="Skip Example Dialogues Formatting">Skip Example Dialogues Formatting</small>
+                                </label>
+                                <label for="instruct_skip_examples" class="checkbox_label">
+                                    <input id="instruct_collapse_same_entity" type="checkbox" />
+                                    <small data-i18n="Collapse Consecutive Same-Entity Sequences" title="If enabled, all consecutive messages with the same entity will be merged in prompt." data-i18n="[title]If enabled, all consecutive messages with the same entity will be merged in prompt.">Collapse Consecutive Same-Entity Sequences</small>
                                 </label>
                                 <div>
                                     <small data-i18n="Include Names">
@@ -5166,7 +5170,7 @@
                 <div class="flex-container wide100p alignitemscenter spaceBetween flexNoGap">
                     <div class="flex-container alignItemsBaseline wide100p">
                         <div class="flex1 flex-container alignItemsBaseline">
-                            <h3 class="margin0" >
+                            <h3 class="margin0">
                                 <span data-i18n="Persona Management">Persona Management</span>
                                 <a href="https://docs.sillytavern.app/usage/core-concepts/personas/" target="_blank">
                                     <span class="fa-solid fa-circle-question note-link-span"></span>
@@ -6576,7 +6580,7 @@
                                 <span id="completion_prompt_manager_popup_entry_source"></span>
                             </div>
                             <textarea id="completion_prompt_manager_popup_entry_form_prompt" class="text_pole" name="prompt" placeholder="The prompt to be sent." data-i18n="[placeholder]The prompt to be sent."></textarea>
-                        </textarea>
+                            </textarea>
                         </div>
                         <div class="completion_prompt_manager_popup_entry_form_footer">
                             <a id="completion_prompt_manager_popup_entry_form_close" title="close" data-i18n="[title]close" class="fa-solid fa-close menu_button"></a>

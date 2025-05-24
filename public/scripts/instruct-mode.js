@@ -43,6 +43,7 @@ const controls = [
     { id: 'instruct_derived', property: 'derived', isCheckbox: true },
     { id: 'instruct_bind_to_context', property: 'bind_to_context', isCheckbox: true },
     { id: 'instruct_skip_examples', property: 'skip_examples', isCheckbox: true },
+    { id: 'instruct_collapse_same_entity', property: 'collapse_same_entity', isCheckbox: true },
     { id: 'instruct_names_behavior', property: 'names_behavior', isCheckbox: false },
     { id: 'instruct_system_same_as_user', property: 'system_same_as_user', isCheckbox: true, trigger: true },
 ];

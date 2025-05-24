@@ -3673,6 +3673,7 @@ export async function generateRaw(prompt, api, instructOverride, quietToLoud, sy
     prompt = api == 'novel' ? adjustNovelInstructionPrompt(prompt) : prompt;
     prompt = isInstruct ? formatInstructModeChat(name1, prompt, false, true, '', name1, name2, false) : prompt;
     prompt = isInstruct ? (prompt + formatInstructModePrompt(name2, false, '', name1, name2, isQuiet, quietToLoud)) : (prompt + '\n');
+    prompt = isInstruct && power_user.instruct.collapse_same_entity ? (collapseConsecutiveMessagesInPrompt(prompt, power_user.instruct)) : prompt;
 
     try {
         if (responseLengthCustomized) {
@@ -3870,6 +3871,159 @@ function removeLastMessage() {
             resolve();
         });
     });
+}
+
+function collapseConsecutiveMessagesInPrompt(prompt, instruct) {
+    if (!instruct.enabled) {
+        console.warn('Instruct mode is disabled; returning original prompt');
+        return prompt;
+    }
+
+    if (!instruct.collapse_same_entity) {
+        console.warn('collapse_same_entity is false; returning original prompt');
+        return prompt;
+    }
+
+    console.warn('Collapsing consecutive messages in prompt');
+
+    // Define prefixes and suffixes
+    const prefixes = {
+        system: instruct.system_sequence,
+        system_first: instruct.system_sequence_prefix,
+        user: instruct.input_sequence,
+        assistant: instruct.output_sequence,
+    };
+    const suffixes = {
+        system_first: instruct.system_sequence_suffix,
+        system: instruct.system_suffix,
+        user: instruct.input_suffix,
+        assistant: instruct.output_suffix,
+    };
+
+    // Validate required settings
+    // Fail only if all prefixes and suffixes are empty strings
+    const allPrefixesEmpty = Object.values(prefixes).every(val => !val);
+    const allSuffixesEmpty = Object.values(suffixes).every(val => !val);
+    if (allPrefixesEmpty && allSuffixesEmpty) {
+        console.warn('All prefixes and suffixes are empty; returning original prompt', {
+            system_sequence: prefixes.system,
+            system_sequence_prefix: prefixes.system_first,
+            input_sequence: prefixes.user,
+            output_sequence: prefixes.assistant,
+            system_first_suffix: suffixes.system_first,
+            system_suffix: suffixes.system,
+            input_suffix: suffixes.user,
+            output_suffix: suffixes.assistant,
+        });
+        return prompt;
+    }
+
+    // Escape prefixes and suffixes for regex, handling empty strings
+    const escapeRegex = (str) => str ? str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') : '';
+    const prefixRegexStr = Object.values(prefixes)
+        .filter(val => val)
+        .map(escapeRegex)
+        .join('|') || '\\b';
+    const suffixRegexStr = Object.values(suffixes)
+        .filter(val => val)
+        .map(escapeRegex)
+        .join('|') || '\\b';
+    // Use lookahead to match content up to suffix or next prefix
+    const messageRegex = new RegExp(
+        `(${prefixRegexStr})([\\s\\S]*?)(?=(?:${suffixRegexStr}|${prefixRegexStr}|$))((?:${suffixRegexStr})?)`,
+        'g',
+    );
+
+    // Parse the prompt into messages
+    const messages = [];
+    let match;
+    let lastIndex = 0;
+
+    console.warn('Parsing prompt with regex:', messageRegex);
+    while ((match = messageRegex.exec(prompt)) !== null) {
+        const [, prefix, content, suffix = ''] = match;
+        const prefixStart = match.index;
+        const gap = prompt.slice(lastIndex, prefixStart);
+        if (gap) {
+            console.warn(`Found gap between messages: ${JSON.stringify(gap)}`);
+        }
+        messages.push({ prefix, content: content.trim(), suffix, fullMatch: match[0], gap });
+        lastIndex = match.index + match[0].length;
+        console.warn(`Matched message: prefix=${prefix}, content=${content}, suffix=${suffix}`);
+    }
+
+    // Capture any trailing text
+    if (lastIndex < prompt.length) {
+        const trailing = prompt.slice(lastIndex);
+        console.warn(`Found trailing text: ${JSON.stringify(trailing)}`);
+        // Check if trailing text starts with a prefix
+        const trailingMatch = trailing.match(new RegExp(`^(${prefixRegexStr})([\\s\\S]*?)(?=(?:${suffixRegexStr}|${prefixRegexStr}|$))((?:${suffixRegexStr})?)`));
+        if (trailingMatch) {
+            const [, prefix, content, suffix = ''] = trailingMatch;
+            messages.push({ prefix, content: content.trim(), suffix, fullMatch: trailingMatch[0], gap: '' });
+            console.warn(`Matched trailing message: prefix=${prefix}, content=${content}, suffix=${suffix}`);
+        }
+    }
+
+    if (messages.length === 0) {
+        console.warn('No messages parsed; returning original prompt');
+        return prompt;
+    }
+
+    // Collapse consecutive messages with the same effective prefix
+    const collapsedMessages = [];
+    let i = 0;
+
+    while (i < messages.length) {
+        const current = messages[i];
+        const effectivePrefix = (i === 0 && current.prefix === prefixes.system_first) ? prefixes.system : current.prefix;
+        let combinedContent = [current.content];
+        let currentSuffix = current.suffix;
+        let j = i + 1;
+
+        // Avoid collapsing the last complete assistant message if followed by an incomplete assistant message
+        const isLastCompleteAssistant = i === messages.length - 2 &&
+            messages[i].prefix === prefixes.assistant &&
+            messages[i + 1].prefix === prefixes.assistant;
+
+        if (!isLastCompleteAssistant) {
+            // Collect consecutive messages with the same effective prefix
+            while (j < messages.length) {
+                const next = messages[j];
+                const nextEffectivePrefix = (j === 0 && next.prefix === prefixes.system_first) ? prefixes.system : next.prefix;
+
+                if (nextEffectivePrefix !== effectivePrefix) {
+                    console.warn(`Stopping collapse at index ${j}: effectivePrefix=${effectivePrefix}, nextEffectivePrefix=${nextEffectivePrefix}`);
+                    break;
+                }
+
+                combinedContent.push(next.content);
+                currentSuffix = next.suffix; // Use the last suffix
+                j++;
+            }
+        }
+
+        // Join contents with newlines
+        const joinedContent = combinedContent.reduce((acc, curr, idx) => {
+            if (idx === 0) return curr;
+            return acc + '\n' + curr;
+        }, '');
+
+        // Add newline after prefix if wrap is true and prefix doesn't end with newline
+        const prefixNewline = instruct.wrap && !current.prefix.match(/\n$/) ? '\n' : '';
+
+        // Create the collapsed message
+        const combinedMessage = `${current.prefix}${prefixNewline}${joinedContent}${currentSuffix}`;
+        collapsedMessages.push(combinedMessage);
+        console.warn(`Collapsed message at index ${i}: ${combinedMessage}`);
+        i = j; // Skip the combined messages
+    }
+
+    // Reconstruct the prompt without extra newlines
+    const collapsedPrompt = collapsedMessages.join('');
+    console.warn('Before collapsing:', prompt);
+    console.warn('After collapsing:', collapsedPrompt);
+    return collapsedPrompt;
 }
 
 /**
@@ -4914,6 +5068,10 @@ export async function Generate(type, { automatic_trigger, force_name2, quiet_pro
         console.debug('rungenerate calling API');
 
         showStopButton();
+
+        if (isInstruct && power_user.instruct.collapse_same_entity) {
+            generate_data.prompt = collapseConsecutiveMessagesInPrompt(generate_data.prompt, power_user.instruct);
+        }
 
         //set array object for prompt token itemization of this message
         let currentArrayEntry = Number(thisPromptBits.length - 1);
