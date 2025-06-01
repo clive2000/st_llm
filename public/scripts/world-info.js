@@ -2316,7 +2316,7 @@ export function deleteWIOriginalDataValue(data, uid) {
 /**
  * Splits a given input string that contains one or more keywords or regexes, separated by commas.
  *
- * Each part can be a valid regex following the pattern `/myregex/flags` with optional flags. Commmas inside the regex are allowed, slashes have to be escaped like this: `\/`
+ * Each part can be a valid regex following the pattern `/myregex/flags` with optional flags. Commas inside the regex are allowed, slashes have to be escaped like this: `\/`
  * If a regex doesn't stand alone, it is not treated as a regex.
  *
  * @param {string} input - One or multiple keywords or regexes, separated by commas
@@ -3055,7 +3055,7 @@ export async function getWorldEntry(name, data, entry) {
 
     const roleValue = entry.position === world_info_position.atDepth ? String(entry.role ?? extension_prompt_roles.SYSTEM) : '';
     template
-        .find(`select[name="position"] option[value=${entry.position}][data-role="${roleValue}"]`)
+        .find(`select[name="position"] option[value="${entry.position}"][data-role="${roleValue}"]`)
         .prop('selected', true)
         .trigger('input');
 

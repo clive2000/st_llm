@@ -148,11 +148,15 @@ router.post('/caption-image', async (request, response) => {
         }
 
         if (request.body.api === 'pollinations') {
+            headers = { Authorization: '' };
             apiUrl = 'https://text.pollinations.ai/openai/chat/completions';
         }
 
-        if (request.body.api === 'ooba') {
+        if (['koboldcpp', 'vllm', 'llamacpp', 'ooba'].includes(request.body.api)) {
             apiUrl = `${trimV1(request.body.server_url)}/v1/chat/completions`;
+        }
+
+        if (request.body.api === 'ooba') {
             const imgMessage = body.messages.pop();
             body.messages.push({
                 role: 'user',
@@ -163,10 +167,6 @@ router.post('/caption-image', async (request, response) => {
                 content: [],
                 image_url: imgMessage?.content?.[1]?.image_url?.url,
             });
-        }
-
-        if (['koboldcpp', 'vllm', 'llamacpp'].includes(request.body.api)) {
-            apiUrl = `${trimV1(request.body.server_url)}/v1/chat/completions`;
         }
 
         setAdditionalHeaders(request, { headers }, apiUrl);

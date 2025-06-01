@@ -56,12 +56,20 @@ export async function getMultimodalCaption(base64Img, prompt) {
         model: extension_settings.caption.multimodal_model || 'gpt-4-turbo',
     };
 
+    // Add Vertex AI specific parameters if using Vertex AI
+    if (extension_settings.caption.multimodal_api === 'vertexai') {
+        requestBody.vertexai_auth_mode = oai_settings.vertexai_auth_mode;
+        requestBody.vertexai_region = oai_settings.vertexai_region;
+    }
+
     if (isOllama) {
         if (extension_settings.caption.multimodal_model === 'ollama_current') {
             requestBody.model = textgenerationwebui_settings.ollama_model;
         }
 
-        requestBody.server_url = textgenerationwebui_settings.server_urls[textgen_types.OLLAMA];
+        requestBody.server_url = extension_settings.caption.alt_endpoint_enabled
+            ? extension_settings.caption.alt_endpoint_url
+            : textgenerationwebui_settings.server_urls[textgen_types.OLLAMA];
     }
 
     if (isVllm) {
@@ -69,19 +77,27 @@ export async function getMultimodalCaption(base64Img, prompt) {
             requestBody.model = textgenerationwebui_settings.vllm_model;
         }
 
-        requestBody.server_url = textgenerationwebui_settings.server_urls[textgen_types.VLLM];
+        requestBody.server_url = extension_settings.caption.alt_endpoint_enabled
+            ? extension_settings.caption.alt_endpoint_url
+            : textgenerationwebui_settings.server_urls[textgen_types.VLLM];
     }
 
     if (isLlamaCpp) {
-        requestBody.server_url = textgenerationwebui_settings.server_urls[textgen_types.LLAMACPP];
+        requestBody.server_url = extension_settings.caption.alt_endpoint_enabled
+            ? extension_settings.caption.alt_endpoint_url
+            : textgenerationwebui_settings.server_urls[textgen_types.LLAMACPP];
     }
 
     if (isOoba) {
-        requestBody.server_url = textgenerationwebui_settings.server_urls[textgen_types.OOBA];
+        requestBody.server_url = extension_settings.caption.alt_endpoint_enabled
+            ? extension_settings.caption.alt_endpoint_url
+            : textgenerationwebui_settings.server_urls[textgen_types.OOBA];
     }
 
     if (isKoboldCpp) {
-        requestBody.server_url = textgenerationwebui_settings.server_urls[textgen_types.KOBOLDCPP];
+        requestBody.server_url = extension_settings.caption.alt_endpoint_enabled
+            ? extension_settings.caption.alt_endpoint_url
+            : textgenerationwebui_settings.server_urls[textgen_types.KOBOLDCPP];
     }
 
     if (isCustom) {
@@ -121,75 +137,100 @@ export async function getMultimodalCaption(base64Img, prompt) {
 }
 
 function throwIfInvalidModel(useReverseProxy) {
-    if (extension_settings.caption.multimodal_api === 'openai' && !secret_state[SECRET_KEYS.OPENAI] && !useReverseProxy) {
+    const altEndpointEnabled = extension_settings.caption.alt_endpoint_enabled;
+    const altEndpointUrl = extension_settings.caption.alt_endpoint_url;
+    const multimodalModel = extension_settings.caption.multimodal_model;
+    const multimodalApi = extension_settings.caption.multimodal_api;
+
+    if (altEndpointEnabled && ['llamacpp', 'ooba', 'koboldcpp', 'vllm', 'ollama'].includes(multimodalApi) && !altEndpointUrl) {
+        throw new Error('Secondary endpoint URL is not set.');
+    }
+
+    if (multimodalApi === 'openai' && !secret_state[SECRET_KEYS.OPENAI] && !useReverseProxy) {
         throw new Error('OpenAI API key is not set.');
     }
 
-    if (extension_settings.caption.multimodal_api === 'openrouter' && !secret_state[SECRET_KEYS.OPENROUTER]) {
+    if (multimodalApi === 'openrouter' && !secret_state[SECRET_KEYS.OPENROUTER]) {
         throw new Error('OpenRouter API key is not set.');
     }
 
-    if (extension_settings.caption.multimodal_api === 'anthropic' && !secret_state[SECRET_KEYS.CLAUDE] && !useReverseProxy) {
+    if (multimodalApi === 'anthropic' && !secret_state[SECRET_KEYS.CLAUDE] && !useReverseProxy) {
         throw new Error('Anthropic (Claude) API key is not set.');
     }
 
-    if (extension_settings.caption.multimodal_api === 'zerooneai' && !secret_state[SECRET_KEYS.ZEROONEAI]) {
+    if (multimodalApi === 'zerooneai' && !secret_state[SECRET_KEYS.ZEROONEAI]) {
         throw new Error('01.AI API key is not set.');
     }
 
-    if (extension_settings.caption.multimodal_api === 'groq' && !secret_state[SECRET_KEYS.GROQ]) {
+    if (multimodalApi === 'groq' && !secret_state[SECRET_KEYS.GROQ]) {
         throw new Error('Groq API key is not set.');
     }
 
-    if (extension_settings.caption.multimodal_api === 'google' && !secret_state[SECRET_KEYS.MAKERSUITE] && !useReverseProxy) {
+    if (multimodalApi === 'google' && !secret_state[SECRET_KEYS.MAKERSUITE] && !useReverseProxy) {
         throw new Error('Google AI Studio API key is not set.');
     }
 
-    if (extension_settings.caption.multimodal_api === 'vertexai' && !secret_state[SECRET_KEYS.VERTEXAI] && !useReverseProxy) {
-        throw new Error('Google Vertex AI API key is not set.');
+    if (multimodalApi === 'vertexai' && !useReverseProxy) {
+        // Check based on authentication mode
+        const authMode = oai_settings.vertexai_auth_mode || 'express';
+
+        if (authMode === 'express') {
+            // Express mode requires API key
+            if (!secret_state[SECRET_KEYS.VERTEXAI]) {
+                throw new Error('Google Vertex AI API key is not set for Express mode.');
+            }
+        } else if (authMode === 'full') {
+            // Full mode requires Service Account JSON and region settings
+            if (!secret_state[SECRET_KEYS.VERTEXAI_SERVICE_ACCOUNT]) {
+                throw new Error('Service Account JSON is required for Vertex AI Full mode. Please validate and save your Service Account JSON.');
+            }
+            if (!oai_settings.vertexai_region) {
+                throw new Error('Region is required for Vertex AI Full mode.');
+            }
+        }
     }
 
-    if (extension_settings.caption.multimodal_api === 'mistral' && !secret_state[SECRET_KEYS.MISTRALAI] && !useReverseProxy) {
+    if (multimodalApi === 'mistral' && !secret_state[SECRET_KEYS.MISTRALAI] && !useReverseProxy) {
         throw new Error('Mistral AI API key is not set.');
     }
 
-    if (extension_settings.caption.multimodal_api === 'cohere' && !secret_state[SECRET_KEYS.COHERE]) {
+    if (multimodalApi === 'cohere' && !secret_state[SECRET_KEYS.COHERE]) {
         throw new Error('Cohere API key is not set.');
     }
 
-    if (extension_settings.caption.multimodal_api === 'xai' && !secret_state[SECRET_KEYS.XAI] && !useReverseProxy) {
+    if (multimodalApi === 'xai' && !secret_state[SECRET_KEYS.XAI] && !useReverseProxy) {
         throw new Error('xAI API key is not set.');
     }
 
-    if (extension_settings.caption.multimodal_api === 'ollama' && !textgenerationwebui_settings.server_urls[textgen_types.OLLAMA]) {
+    if (multimodalApi === 'ollama' && !textgenerationwebui_settings.server_urls[textgen_types.OLLAMA] && !altEndpointEnabled) {
         throw new Error('Ollama server URL is not set.');
     }
 
-    if (extension_settings.caption.multimodal_api === 'ollama' && extension_settings.caption.multimodal_model === 'ollama_current' && !textgenerationwebui_settings.ollama_model) {
+    if (multimodalApi === 'ollama' && multimodalModel === 'ollama_current' && !textgenerationwebui_settings.ollama_model) {
         throw new Error('Ollama model is not set.');
     }
 
-    if (extension_settings.caption.multimodal_api === 'llamacpp' && !textgenerationwebui_settings.server_urls[textgen_types.LLAMACPP]) {
+    if (multimodalApi === 'llamacpp' && !textgenerationwebui_settings.server_urls[textgen_types.LLAMACPP] && !altEndpointEnabled) {
         throw new Error('LlamaCPP server URL is not set.');
     }
 
-    if (extension_settings.caption.multimodal_api === 'ooba' && !textgenerationwebui_settings.server_urls[textgen_types.OOBA]) {
+    if (multimodalApi === 'ooba' && !textgenerationwebui_settings.server_urls[textgen_types.OOBA] && !altEndpointEnabled) {
         throw new Error('Text Generation WebUI server URL is not set.');
     }
 
-    if (extension_settings.caption.multimodal_api === 'koboldcpp' && !textgenerationwebui_settings.server_urls[textgen_types.KOBOLDCPP]) {
+    if (multimodalApi === 'koboldcpp' && !textgenerationwebui_settings.server_urls[textgen_types.KOBOLDCPP] && !altEndpointEnabled) {
         throw new Error('KoboldCpp server URL is not set.');
     }
 
-    if (extension_settings.caption.multimodal_api === 'vllm' && !textgenerationwebui_settings.server_urls[textgen_types.VLLM]) {
+    if (multimodalApi === 'vllm' && !textgenerationwebui_settings.server_urls[textgen_types.VLLM] && !altEndpointEnabled) {
         throw new Error('vLLM server URL is not set.');
     }
 
-    if (extension_settings.caption.multimodal_api === 'vllm' && extension_settings.caption.multimodal_model === 'vllm_current' && !textgenerationwebui_settings.vllm_model) {
+    if (multimodalApi === 'vllm' && multimodalModel === 'vllm_current' && !textgenerationwebui_settings.vllm_model) {
         throw new Error('vLLM model is not set.');
     }
 
-    if (extension_settings.caption.multimodal_api === 'custom' && !oai_settings.custom_url) {
+    if (multimodalApi === 'custom' && !oai_settings.custom_url) {
         throw new Error('Custom API URL is not set.');
     }
 }

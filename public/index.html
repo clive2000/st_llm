@@ -691,7 +691,7 @@
                                         </span>
                                     </div>
                                 </div>
-                                <div class="range-block" data-source="openai,claude,windowai,openrouter,ai21,scale,makersuite,vertexai,mistralai,custom,cohere,perplexity,groq,01ai,nanogpt,deepseek,xai">
+                                <div class="range-block" data-source="openai,claude,windowai,openrouter,ai21,scale,makersuite,vertexai,mistralai,custom,cohere,perplexity,groq,01ai,nanogpt,deepseek,xai,pollinations">
                                     <div class="range-block-title" data-i18n="Temperature">
                                         Temperature
                                     </div>
@@ -704,7 +704,7 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div class="range-block" data-source="openai,openrouter,custom,cohere,perplexity,groq,mistralai,nanogpt,deepseek,xai">
+                                <div class="range-block" data-source="openai,openrouter,custom,cohere,perplexity,groq,mistralai,nanogpt,deepseek,xai,pollinations">
                                     <div class="range-block-title" data-i18n="Frequency Penalty">
                                         Frequency Penalty
                                     </div>
@@ -717,7 +717,7 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div class="range-block" data-source="openai,openrouter,custom,cohere,perplexity,groq,mistralai,nanogpt,deepseek,xai">
+                                <div class="range-block" data-source="openai,openrouter,custom,cohere,perplexity,groq,mistralai,nanogpt,deepseek,xai,pollinations">
                                     <div class="range-block-title" data-i18n="Presence Penalty">
                                         Presence Penalty
                                     </div>
@@ -743,7 +743,7 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div class="range-block" data-source="openai,claude,openrouter,ai21,scale,makersuite,vertexai,mistralai,custom,cohere,perplexity,groq,01ai,nanogpt,deepseek,xai">
+                                <div class="range-block" data-source="openai,claude,openrouter,ai21,scale,makersuite,vertexai,mistralai,custom,cohere,perplexity,groq,01ai,nanogpt,deepseek,xai,pollinations">
                                     <div class="range-block-title" data-i18n="Top P">
                                         Top P
                                     </div>
@@ -2020,6 +2020,20 @@
                                         </div>
                                     </div>
                                     <div class="range-block" data-source="makersuite,vertexai">
+                                        <label for="openai_video_inlining" class="checkbox_label flexWrap widthFreeExpand">
+                                            <input id="openai_video_inlining" type="checkbox" />
+                                            <span data-i18n="Send inline videos">Send inline videos</span>
+                                        </label>
+                                        <div id="video_inlining_hint" class="flexBasis100p toggle-description justifyLeft">
+                                            <span data-i18n="video_inlining_hint_1">Sends videos in prompts if the model supports it. Use the</span>
+                                            <code><i class="fa-solid fa-paperclip"></i></code>
+                                            <span data-i18n="video_inlining_hint_2">action on any message or the</span>
+                                            <code><i class="fa-solid fa-wand-magic-sparkles"></i></code>
+                                            <span data-i18n="video_inlining_hint_3">menu to attach a video file to the chat.</span>
+                                            <strong data-i18n="video_inlining_hint_4">Videos must be less than 20 MB and under 1 minute long</strong>
+                                        </div>
+                                    </div>
+                                    <div class="range-block" data-source="makersuite,vertexai">
                                         <label for="openai_request_images" class="checkbox_label widthFreeExpand">
                                             <input id="openai_request_images" type="checkbox" />
                                             <span>
@@ -2050,7 +2064,7 @@
                                             </span>
                                         </div>
                                     </div>
-                                    <div class="range-block" data-source="deepseek,openrouter,custom,claude,xai,makersuite">
+                                    <div class="range-block" data-source="deepseek,openrouter,custom,claude,xai,makersuite,vertexai">
                                         <label for="openai_show_thoughts" class="checkbox_label widthFreeExpand">
                                             <input id="openai_show_thoughts" type="checkbox" />
                                             <span data-i18n="Request model reasoning">Request model reasoning</span>
@@ -2059,14 +2073,16 @@
                                             <span data-i18n="Allows the model to return its thinking process.">
                                                 Allows the model to return its thinking process.
                                             </span>
+                                            <span data-i18n="This setting affects visibility only.">
+                                                This setting affects visibility only.
+                                            </span>
                                         </div>
                                     </div>
                                     <div class="flex-container flexFlowColumn wide100p textAlignCenter marginTop10" data-source="openai,custom,claude,xai,makersuite,vertexai,openrouter,pollinations">
                                         <div class="flex-container oneline-dropdown" title="Constrains effort on reasoning for reasoning models.&#10;Reducing reasoning effort can result in faster responses and fewer tokens used on reasoning in a response." data-i18n="[title]Constrains effort on reasoning for reasoning models.">
                                             <label for="openai_reasoning_effort">
                                                 <span data-i18n="Reasoning Effort">Reasoning Effort</span>
-                                                <i data-source="openai,custom,xai,openrouter" class="opacity50p fa-solid fa-circle-info" title="OpenAI-style options: low, medium, high. Minimum and maximum are aliased to low and high. Auto does not send an effort level." data-i18n="[title]OpenAI-style options: low, medium, high. Minimum and maximum are aliased to low and high. Auto does not send an effort level."></i>
-                                                <i data-source="claude,makersuite,vertexai" class="opacity50p fa-solid fa-circle-info" title="Allocates a portion of the response length for thinking (low: 10%, medium: 25%, high: 50%). Other options are model-dependent." data-i18n="[title]Allocates a portion of the response length for thinking (low: 10%, medium: 25%, high: 50%). Other options are model-dependent."></i>
+                                                <a href="https://docs.sillytavern.app/usage/prompts/reasoning/#reasoning-effort" target="_blank" class="opacity50p fa-solid fa-circle-question"></a>
                                             </label>
                                             <select id="openai_reasoning_effort">
                                                 <option data-i18n="openai_reasoning_effort_auto" value="auto">Auto</option>
@@ -2076,6 +2092,15 @@
                                                 <option data-i18n="openai_reasoning_effort_high" value="high">High</option>
                                                 <option data-i18n="openai_reasoning_effort_maximum" value="max">Maximum</option>
                                             </select>
+                                            <div class="toggle-description justifyLeft marginBot5" data-source="openai,custom,xai,openrouter" data-i18n="OpenAI-style options: low, medium, high. Minimum and maximum are aliased to low and high. Auto does not send an effort level.">
+                                                OpenAI-style options: low, medium, high. Minimum and maximum are aliased to low and high. Auto does not send an effort level.
+                                            </div>
+                                            <div class="toggle-description justifyLeft marginBot5" data-source="claude" data-i18n="Allocates a portion of the response length for thinking (min: 1024 tokens, low: 10%, medium: 25%, high: 50%, max: 95%), but minimum 1024 tokens. Auto does not request thinking.">
+                                                Allocates a portion of the response length for thinking (min: 1024 tokens, low: 10%, medium: 25%, high: 50%, max: 95%), but minimum 1024 tokens. Auto does not request thinking.
+                                            </div>
+                                            <div class="toggle-description justifyLeft marginBot5" data-source="makersuite,vertexai" data-i18n="Allocates a portion of the response length for thinking (min: 0 tokens, low: 10%, medium: 25%, high: 50%, max: 24576 tokens). Auto lets the model decide.">
+                                                Allocates a portion of the response length for thinking (min: 0 tokens, low: 10%, medium: 25%, high: 50%, max: 24576 tokens). Auto lets the model decide.
+                                            </div>
                                         </div>
                                     </div>
                                     <div class="range-block" data-source="claude">
@@ -2768,7 +2793,7 @@
                                 <option value="deepseek">DeepSeek</option>
                                 <option value="groq">Groq</option>
                                 <option value="makersuite">Google AI Studio</option>
-                                <option value="vertexai">Google Vertex AI (Express mode)</option>
+                                <option value="vertexai">Google Vertex AI</option>
                                 <option value="mistralai">MistralAI</option>
                                 <option value="nanogpt">NanoGPT</option>
                                 <option value="openrouter">OpenRouter</option>
@@ -3214,32 +3239,114 @@
                             </div>
                         </form>
                         <div id="vertexai_form" data-source="vertexai">
-                            <h4>
-                                <span data-i18n="Google Vertex AI API Key">
-                                    Google Vertex AI API Key
-                                </span>
-                                <a href="https://cloud.google.com/vertex-ai/generative-ai/docs/start/express-mode/overview" data-i18n="(Express mode keys only)" target="_blank" rel="noopener noreferrer">
-                                    (Express mode keys only)
-                                </a>
-                            </h4>
+                            <h4 data-i18n="Google Vertex AI Configuration">Google Vertex AI Configuration</h4>
+
+                            <!-- Authentication Mode Selection -->
                             <div class="flex-container">
-                                <input id="api_key_vertexai" name="api_key_vertexai" class="text_pole flex1" value="" type="text" autocomplete="off">
-                                <div title="Clear your API key" data-i18n="[title]Clear your API key" class="menu_button fa-solid fa-circle-xmark clear-api-key" data-key="api_key_vertexai"></div>
+                                <label for="vertexai_auth_mode" data-i18n="Authentication Mode">Authentication Mode:</label>
+                                <select id="vertexai_auth_mode" class="text_pole">
+                                    <option value="express" data-i18n="Express Mode (API Key)">Express Mode (API Key)</option>
+                                    <option value="full" data-i18n="Full Version (Service Account)">Full Version (Service Account)</option>
+                                </select>
                             </div>
-                            <div data-for="api_key_vertexai" class="neutral_warning" data-i18n="For privacy reasons, your API key will be hidden after you reload the page.">
-                                For privacy reasons, your API key will be hidden after you reload the page.
+
+                            <!-- Express Mode Configuration -->
+                            <div id="vertexai_express_config" class="vertexai-auth-section" data-mode="express">
+                                <h4>
+                                    <span data-i18n="Google Vertex AI API Key">
+                                        Google Vertex AI API Key
+                                    </span>
+                                    <a href="https://cloud.google.com/vertex-ai/generative-ai/docs/start/express-mode/overview" data-i18n="(Express mode)" target="_blank" rel="noopener noreferrer">
+                                        (Express mode)
+                                    </a>
+                                </h4>
+                                <div class="flex-container">
+                                    <input id="api_key_vertexai" name="api_key_vertexai" class="text_pole flex1" value="" type="text" autocomplete="off">
+                                    <div title="Clear your API key" data-i18n="[title]Clear your API key" class="menu_button fa-solid fa-circle-xmark clear-api-key" data-key="api_key_vertexai"></div>
+                                </div>
+                                <div data-for="api_key_vertexai" class="neutral_warning" data-i18n="For privacy reasons, your API key will be hidden after you reload the page.">
+                                    For privacy reasons, your API key will be hidden after you reload the page.
+                                </div>
                             </div>
+
+                            <!-- Full Version Configuration -->
+                            <div id="vertexai_full_config" class="vertexai-auth-section" data-mode="full">
+                                <h4>
+                                    <span data-i18n="Service Account Configuration">
+                                        Service Account Configuration
+                                    </span>
+                                    <a href="https://cloud.google.com/vertex-ai/docs/authentication" target="_blank" rel="noopener noreferrer">
+                                        <i class="fa-solid fa-circle-question"></i>
+                                    </a>
+                                </h4>
+
+                                <!-- Region -->
+                                <div class="flex-container flexFlowColumn">
+                                    <label for="vertexai_region">
+                                        <span data-i18n="Region">
+                                            Region:
+                                        </span>
+                                        <a href="https://cloud.google.com/vertex-ai/generative-ai/docs/learn/locations" target="_blank" rel="noopener noreferrer" title="View available regions and models" data-i18n="[title]View available regions and models" class="notes-link">
+                                            <span class="fa-solid fa-circle-question note-link-span"></span>
+                                        </a>
+                                    </label>
+                                    <input id="vertexai_region" name="vertexai_region" class="text_pole flex1" value="us-central1" type="text" autocomplete="off" placeholder="e.g., global, us-central1, europe-west1, asia-northeast1">
+                                </div>
+
+                                <!-- Service Account JSON Content -->
+                                <div class="flex-container flexFlowColumn">
+                                    <label for="vertexai_service_account_json" data-i18n="Service Account JSON Content">Service Account JSON Content:</label>
+                                    <div id="vertexai_service_account_status" class="info-block marginTopBot5" style="display: none;">
+                                        <span id="vertexai_service_account_info"></span>
+                                    </div>
+                                    <textarea id="vertexai_service_account_json" class="text_pole textarea_compact" rows="4" placeholder='Paste your Service Account JSON content here, e.g.:
+{
+  "type": "service_account",
+  "project_id": "your-project-id",
+  "private_key_id": "...",
+  "private_key": "-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n",
+  "client_email": "...",
+  "client_id": "...",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token"
+}'></textarea>
+                                    <div data-for="vertexai_service_account_json" class="neutral_warning" data-i18n="For privacy reasons, your Service Account JSON content will be hidden after you reload the page.">
+                                        For privacy reasons, your Service Account JSON content will be hidden after you reload the page.
+                                    </div>
+                                    <div class="flex-container">
+                                        <button type="button" id="vertexai_validate_service_account" class="menu_button menu_button_icon" data-i18n="Validate JSON">Validate JSON</button>
+                                        <button type="button" id="vertexai_clear_service_account" class="menu_button menu_button_icon" data-i18n="Clear">Clear</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Model Selection -->
                             <div>
                                 <h4 data-i18n="Google Model">Google Model</h4>
                                 <select id="model_vertexai_select">
-                                    <optgroup label="Gemini 2.5">
+                                    <!-- Express Mode Models -->
+                                    <optgroup id="vertexai_express_models" label="Express Mode Models" data-mode="express">
                                         <option value="gemini-2.5-pro-preview-05-06">gemini-2.5-pro-preview-05-06</option>
                                         <option value="gemini-2.5-pro-preview-03-25">gemini-2.5-pro-preview-03-25</option>
                                         <option value="gemini-2.5-flash-preview-05-20">gemini-2.5-flash-preview-05-20</option>
                                         <option value="gemini-2.5-flash-preview-04-17">gemini-2.5-flash-preview-04-17</option>
-                                    </optgroup>
-                                    <optgroup label="Gemini 2.0">
                                         <option value="gemini-2.0-flash-001">gemini-2.0-flash-001</option>
+                                        <option value="gemini-2.0-flash-lite-001">gemini-2.0-flash-lite-001</option>
+                                    </optgroup>
+
+                                    <!-- Full Version Models -->
+                                    <optgroup id="vertexai_full_gemini_25" label="Gemini 2.5" data-mode="full">
+                                        <option value="gemini-2.5-pro-preview-05-06">gemini-2.5-pro-preview-05-06</option>
+                                        <option value="gemini-2.5-pro-preview-03-25">gemini-2.5-pro-preview-03-25</option>
+                                        <option value="gemini-2.5-pro-exp-03-25">gemini-2.5-pro-exp-03-25</option>
+                                        <option value="gemini-2.5-flash-preview-05-20">gemini-2.5-flash-preview-05-20</option>
+                                        <option value="gemini-2.5-flash-preview-04-17">gemini-2.5-flash-preview-04-17</option>
+                                    </optgroup>
+                                    <optgroup id="vertexai_full_gemini_20" label="Gemini 2.0" data-mode="full">
+                                        <option value="gemini-2.0-flash-001">gemini-2.0-flash-001</option>
+                                        <option value="gemini-2.0-flash-exp">gemini-2.0-flash-exp</option>
+                                        <option value="gemini-2.0-flash-preview-image-generation">gemini-2.0-flash-preview-image-generation</option>
+                                        <option value="gemini-2.0-flash">gemini-2.0-flash</option>
                                         <option value="gemini-2.0-flash-lite-001">gemini-2.0-flash-lite-001</option>
                                     </optgroup>
                                 </select>
@@ -3714,7 +3821,7 @@
                                     <input id="instruct_derived" type="checkbox" style="display:none;" />
                                     <small><i class="fa-solid fa-bolt menu_button margin0"></i></small>
                                 </label>
-                                <label for="instruct_bind_to_context" class="checkbox_label flex1" title="Bind to Context&#10If enabled, Context templates will be automatically selected based on selected Instruct template name or by preference." data-i18n="[title]instruct_bind_to_context">
+                                <label for="instruct_bind_to_context" class="checkbox_label flex1" title="Bind to Context&#10;If enabled, Context templates will be automatically selected based on selected Instruct template name or by preference." data-i18n="[title]instruct_bind_to_context">
                                     <input id="instruct_bind_to_context" type="checkbox" style="display:none;" />
                                     <small><i class="fa-solid fa-link menu_button margin0"></i></small>
                                 </label>
@@ -4035,7 +4142,7 @@
                                         </small>
                                     </label>
                                     <div class="flex1 flex-container alignItemsBaseline" title="Maximum number of reasoning blocks to be added per prompt, counting from the last message." data-i18n="[title]reasoning_max_additions">
-                                        <input id="reasoning_max_additions" class="text_pole textarea_compact widthUnset" type="number" min="0" max="999"></textarea>
+                                        <input id="reasoning_max_additions" class="text_pole textarea_compact widthUnset" type="number" min="0" max="999" />
                                         <small data-i18n="Max">Max</small>
                                     </div>
                                 </div>
@@ -4649,12 +4756,15 @@
 
                         <div name="MiscellaneousToggles">
                             <h4><span data-i18n="Miscellaneous">Miscellaneous</span></h4>
-                            <div class="flex-container">
+                            <div class="flex-container flexGap2">
                                 <div id="reload_chat" class="menu_button whitespacenowrap" data-i18n="[title]Reload and redraw the currently open chat" title="Reload and redraw the currently open chat.">
                                     <small data-i18n="Reload Chat">Reload Chat</small>
                                 </div>
                                 <div id="debug_menu" class="menu_button whitespacenowrap">
                                     <small data-i18n="Debug Menu">Debug Menu</small>
+                                </div>
+                                <div id="data_maid_button" class="menu_button whitespacenowrap" title="Find and delete backups, unused chats, files, images, etc." data-i18n="[title]Find and delete backups, unused chats, files, images, etc.">
+                                    <small data-i18n="Clean-Up">Clean-Up</small>
                                 </div>
                             </div>
                             <label class="checkbox_label flexWrap" for="smooth_streaming">
@@ -4935,6 +5045,14 @@
                                     <div class="fa-solid fa-circle-chevron-down inline-drawer-icon down"></div>
                                 </div>
                                 <div class="inline-drawer-content">
+                                    <label for="stscript_autocomplete_state">
+                                        <small data-i18n="Visibility">Visibility</small>
+                                    </label>
+                                    <select id="stscript_autocomplete_state">
+                                        <option value="0" data-i18n="Don't show">Don't show</option>
+                                        <option value="1" data-i18n="Input length > 1">Input length > 1</option>
+                                        <option value="2" data-i18n="Always show">Always show</option>
+                                    </select>
                                     <label class="checkbox_label" for="stscript_autocomplete_autoHide">
                                         <input id="stscript_autocomplete_autoHide" type="checkbox" />
                                         <small data-i18n="Automatically hide details">
@@ -6580,7 +6698,6 @@
                                 <span id="completion_prompt_manager_popup_entry_source"></span>
                             </div>
                             <textarea id="completion_prompt_manager_popup_entry_form_prompt" class="text_pole" name="prompt" placeholder="The prompt to be sent." data-i18n="[placeholder]The prompt to be sent."></textarea>
-                            </textarea>
                         </div>
                         <div class="completion_prompt_manager_popup_entry_form_footer">
                             <a id="completion_prompt_manager_popup_entry_form_close" title="close" data-i18n="[title]close" class="fa-solid fa-close menu_button"></a>

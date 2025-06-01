@@ -283,6 +283,7 @@ import { getContext } from './scripts/st-context.js';
 import { extractReasoningFromData, initReasoning, parseReasoningInSwipes, PromptReasoning, ReasoningHandler, removeReasoningFromString, updateReasoningUI } from './scripts/reasoning.js';
 import { accountStorage } from './scripts/util/AccountStorage.js';
 import { initWelcomeScreen, openPermanentAssistantChat, openPermanentAssistantCard, getPermanentAssistantAvatar } from './scripts/welcome-screen.js';
+import { initDataMaid } from './scripts/data-maid.js';
 
 // API OBJECT FOR EXTERNAL WIRING
 globalThis.SillyTavern = {
@@ -379,7 +380,7 @@ DOMPurify.addHook('uponSanitizeElement', (node, _, config) => {
 
     // Replace line breaks with <br> in unknown elements
     if (node instanceof HTMLUnknownElement) {
-        node.innerHTML = node.innerHTML.replaceAll('\n', '<br>');
+        node.innerHTML = node.innerHTML.trim().replaceAll('\n', '<br>');
     }
 
     const isMediaAllowed = isExternalMediaAllowed();
@@ -1026,6 +1027,7 @@ async function firstLoadInit() {
     initWelcomeScreen();
     await initScrapers();
     initCustomSelectedSamplers();
+    initDataMaid();
     addDebugFunctions();
     doDailyExtensionUpdatesCheck();
     await hideLoader();
@@ -1880,6 +1882,52 @@ async function delChat(chatfile) {
     }
 }
 
+/**
+ * Deletes a character chat by its name.
+ * @param {string} characterId Character ID to delete chat for
+ * @param {string} fileName Name of the chat file to delete (without .jsonl extension)
+ * @returns {Promise<void>} A promise that resolves when the chat is deleted.
+ */
+export async function deleteCharacterChatByName(characterId, fileName) {
+    // Make sure all the data is loaded.
+    await unshallowCharacter(characterId);
+
+    /** @type {import('./scripts/char-data.js').v1CharData} */
+    const character = characters[characterId];
+    if (!character) {
+        console.warn(`Character with ID ${characterId} not found.`);
+        return;
+    }
+
+    const response = await fetch('/api/chats/delete', {
+        method: 'POST',
+        headers: getRequestHeaders(),
+        body: JSON.stringify({
+            chatfile: `${fileName}.jsonl`,
+            avatar_url: character.avatar,
+        }),
+    });
+
+    if (!response.ok) {
+        console.error('Failed to delete chat for character.');
+        return;
+    }
+
+    if (fileName === character.chat) {
+        const chatsResponse = await fetch('/api/characters/chats', {
+            method: 'POST',
+            headers: getRequestHeaders(),
+            body: JSON.stringify({ avatar_url: character.avatar }),
+        });
+        const chats = Object.values(await chatsResponse.json());
+        chats.sort((a, b) => sortMoments(timestampToMoment(a.last_mes), timestampToMoment(b.last_mes)));
+        const newChatName = chats.length && typeof chats[0] === 'object' ? chats[0].file_name.replace('.jsonl', '') : `${character.name} - ${humanizedDateTime()}`;
+        await updateRemoteChatName(characterId, newChatName);
+    }
+
+    await eventSource.emit(event_types.CHAT_DELETED, fileName);
+}
+
 export async function replaceCurrentChat() {
     await clearChat();
     chat.length = 0;
@@ -2423,6 +2471,31 @@ export function appendMediaToMessage(mes, messageElement, adjustScroll = true) {
                 eventSource.emit(event_types.IMAGE_SWIPED, { message: mes, element: messageElement, direction: 'right' });
             });
         }
+    }
+
+    // Add video to message
+    if (mes.extra?.video) {
+        const container = messageElement.find('.mes_block');
+        const chatHeight = $('#chat').prop('scrollHeight');
+
+        // Create video element if it doesn't exist
+        let video = messageElement.find('.mes_video');
+        if (video.length === 0) {
+            video = $('<video class="mes_video" controls preload="metadata"></video>');
+            container.append(video);
+        }
+
+        video.off('loadedmetadata').on('loadedmetadata', function () {
+            if (!adjustScroll) {
+                return;
+            }
+            const scrollPosition = $('#chat').scrollTop();
+            const newChatHeight = $('#chat').prop('scrollHeight');
+            const diff = newChatHeight - chatHeight;
+            $('#chat').scrollTop(scrollPosition + diff);
+        });
+
+        video.attr('src', mes.extra?.video);
     }
 
     // Add file to message
@@ -3520,7 +3593,7 @@ class StreamingProcessor {
         }
 
         if (this.image) {
-            await processImageAttachment(chat[messageId], { imageUrl: this.image, parsedImage: null });
+            await processImageAttachment(chat[messageId], { imageUrl: this.image });
             appendMediaToMessage(chat[messageId], $(this.messageDom));
         }
 
@@ -6421,17 +6494,11 @@ export function cleanUpMessage({ getMessage, isImpersonate, isContinue, displayI
  * Adds an image to the message.
  * @param {object} message Message object
  * @param {object} sources Image sources
- * @param {ParsedImage} [sources.parsedImage] Parsed image
  * @param {string} [sources.imageUrl] Image URL
  *
  * @returns {Promise<void>}
  */
-async function processImageAttachment(message, { parsedImage, imageUrl }) {
-    if (parsedImage?.image) {
-        saveImageToMessage(parsedImage, message);
-        return;
-    }
-
+async function processImageAttachment(message, { imageUrl }) {
     if (!imageUrl) {
         return;
     }
@@ -6490,8 +6557,6 @@ export async function saveReply({ type, getMessage, fromStreaming = false, title
 
     let oldMessage = '';
     const generationFinished = new Date();
-    const parsedImage = extractImageFromMessage(getMessage);
-    getMessage = parsedImage.getMessage;
     if (type === 'swipe') {
         oldMessage = chat[chat.length - 1]['mes'];
         chat[chat.length - 1]['swipes'].length++;
@@ -6505,7 +6570,7 @@ export async function saveReply({ type, getMessage, fromStreaming = false, title
             chat[chat.length - 1]['extra']['model'] = getGeneratingModel();
             chat[chat.length - 1]['extra']['reasoning'] = reasoning;
             chat[chat.length - 1]['extra']['reasoning_duration'] = null;
-            await processImageAttachment(chat[chat.length - 1], { parsedImage, imageUrl });
+            await processImageAttachment(chat[chat.length - 1], { imageUrl });
             if (power_user.message_token_count_enabled) {
                 const tokenCountText = (reasoning || '') + chat[chat.length - 1]['mes'];
                 chat[chat.length - 1]['extra']['token_count'] = await getTokenCountAsync(tokenCountText, 0);
@@ -6529,7 +6594,7 @@ export async function saveReply({ type, getMessage, fromStreaming = false, title
         chat[chat.length - 1]['extra']['model'] = getGeneratingModel();
         chat[chat.length - 1]['extra']['reasoning'] = reasoning;
         chat[chat.length - 1]['extra']['reasoning_duration'] = null;
-        await processImageAttachment(chat[chat.length - 1], { parsedImage, imageUrl });
+        await processImageAttachment(chat[chat.length - 1], { imageUrl });
         if (power_user.message_token_count_enabled) {
             const tokenCountText = (reasoning || '') + chat[chat.length - 1]['mes'];
             chat[chat.length - 1]['extra']['token_count'] = await getTokenCountAsync(tokenCountText, 0);
@@ -6549,7 +6614,7 @@ export async function saveReply({ type, getMessage, fromStreaming = false, title
         chat[chat.length - 1]['extra']['api'] = getGeneratingApi();
         chat[chat.length - 1]['extra']['model'] = getGeneratingModel();
         chat[chat.length - 1]['extra']['reasoning'] += reasoning;
-        await processImageAttachment(chat[chat.length - 1], { parsedImage, imageUrl });
+        await processImageAttachment(chat[chat.length - 1], { imageUrl });
         // We don't know if the reasoning duration extended, so we don't update it here on purpose.
         if (power_user.message_token_count_enabled) {
             const tokenCountText = (reasoning || '') + chat[chat.length - 1]['mes'];
@@ -6595,7 +6660,7 @@ export async function saveReply({ type, getMessage, fromStreaming = false, title
             chat[chat.length - 1]['extra']['gen_id'] = group_generation_id;
         }
 
-        await processImageAttachment(chat[chat.length - 1], { parsedImage, imageUrl: imageUrl });
+        await processImageAttachment(chat[chat.length - 1], { imageUrl });
         const chat_id = (chat.length - 1);
 
         !fromStreaming && await eventSource.emit(event_types.MESSAGE_RECEIVED, chat_id, type);
@@ -6810,15 +6875,6 @@ function getGeneratingModel(mes) {
             break;
     }
     return model;
-}
-
-function extractImageFromMessage(getMessage) {
-    const regex = /<img src="(.*?)".*?alt="(.*?)".*?>/g;
-    const results = regex.exec(getMessage);
-    const image = results ? results[1] : '';
-    const title = results ? results[2] : '';
-    getMessage = getMessage.replace(regex, '');
-    return { getMessage, image, title, inline: true };
 }
 
 /**
@@ -8724,7 +8780,7 @@ export function showSwipeButtons() {
 
     //had to add this to make the swipe counter work
     //(copied from the onclick functions for swipe buttons..
-    //don't know why the array isn't set for non-swipe messsages in Generate or addOneMessage..)
+    //don't know why the array isn't set for non-swipe messages in Generate or addOneMessage..)
     if (chat[chat.length - 1]['swipe_id'] === undefined) {              // if there is no swipe-message in the last spot of the chat array
         chat[chat.length - 1]['swipe_id'] = 0;                        // set it to id 0
         chat[chat.length - 1]['swipes'] = [];                         // empty the array
@@ -9506,13 +9562,13 @@ export function swipe_left(_event, { source, repeated } = {}) {
 
 /**
  * Handles the swipe to the right event.
- * @param {JQuery.Event} _event Event.
+ * @param {JQuery.Event} [_event] Event.
  * @param {object} params Additional parameters.
  * @param {string} [params.source] The source of the swipe event.
  * @param {boolean} [params.repeated] Is the swipe event repeated.
  */
 //MARK: swipe_right
-export function swipe_right(_event, { source, repeated } = {}) {
+export function swipe_right(_event = null, { source, repeated } = {}) {
     if (chat.length - 1 === Number(this_edit_mes_id)) {
         closeMessageEditor();
     }
@@ -9524,6 +9580,7 @@ export function swipe_right(_event, { source, repeated } = {}) {
     // Make sure ad-hoc changes to extras are saved before swiping away
     syncMesToSwipe();
 
+    const isPristine = !chat_metadata?.tainted;
     const swipe_duration = 200;
     const swipe_range = 700;
     //console.log(swipe_range);
@@ -9542,14 +9599,16 @@ export function swipe_right(_event, { source, repeated } = {}) {
         };
         //assign swipe info array with last message from chat
     }
-    if (chat.length === 1 && chat[0]['swipe_id'] !== undefined && chat[0]['swipe_id'] === chat[0]['swipes'].length - 1) {    // if swipe_right is called on the last alternate greeting, loop back around
+    // if swipe_right is called on the last alternate greeting in pristine chats, loop back around
+    if (chat.length === 1 && chat[0]['swipe_id'] !== undefined && chat[0]['swipe_id'] === chat[0]['swipes'].length - 1 && isPristine) {
         chat[0]['swipe_id'] = 0;
     } else {
         // If the user is holding down the key and we're at the last swipe, don't do anything
         if (source === 'keyboard' && repeated && chat[chat.length - 1].swipe_id === chat[chat.length - 1].swipes.length - 1) {
             return;
         }
-        chat[chat.length - 1]['swipe_id']++;                                // make new slot in array
+        // make new slot in array
+        chat[chat.length - 1]['swipe_id']++;
     }
     if (chat[chat.length - 1].extra) {
         // if message has memory attached - remove it to allow regen
@@ -9564,8 +9623,8 @@ export function swipe_right(_event, { source, repeated } = {}) {
     if (!Array.isArray(chat[chat.length - 1]['swipe_info'])) {
         chat[chat.length - 1]['swipe_info'] = [];
     }
-    //console.log(chat[chat.length-1]['swipes']);
-    if (parseInt(chat[chat.length - 1]['swipe_id']) === chat[chat.length - 1]['swipes'].length && chat.length !== 1) { //if swipe id of last message is the same as the length of the 'swipes' array and not the greeting
+    //if swipe id of last message is the same as the length of the 'swipes' array and not the greeting
+    if (parseInt(chat[chat.length - 1]['swipe_id']) === chat[chat.length - 1]['swipes'].length && (chat.length !== 1 || !isPristine)) {
         delete chat[chat.length - 1].gen_started;
         delete chat[chat.length - 1].gen_finished;
         run_generate = true;
@@ -10143,16 +10202,21 @@ async function doRenameChat(_, chatName) {
 }
 
 /**
- * Renames the currently selected chat.
- * @param {string} oldFileName Old name of the chat (no JSONL extension)
- * @param {string} newName New name for the chat (no JSONL extension)
+ * Renames a group or character chat.
+ * @param {object} param Parameters for renaming chat
+ * @param {string} [param.characterId] Character ID to rename chat for
+ * @param {string} [param.groupId] Group ID to rename chat for
+ * @param {string} param.oldFileName Old name of the chat (no JSONL extension)
+ * @param {string} param.newFileName New name for the chat (no JSONL extension)
+ * @param {boolean} [param.loader=true] Whether to show loader during the operation
  */
-export async function renameChat(oldFileName, newName) {
+export async function renameGroupOrCharacterChat({ characterId, groupId, oldFileName, newFileName, loader }) {
+    const currentChatId = getCurrentChatId();
     const body = {
-        is_group: !!selected_group,
-        avatar_url: characters[this_chid]?.avatar,
+        is_group: !!groupId,
+        avatar_url: characters[characterId]?.avatar,
         original_file: `${oldFileName}.jsonl`,
-        renamed_file: `${newName.trim()}.jsonl`,
+        renamed_file: `${newFileName.trim()}.jsonl`,
     };
 
     if (body.original_file === body.renamed_file) {
@@ -10165,7 +10229,8 @@ export async function renameChat(oldFileName, newName) {
     }
 
     try {
-        showLoader();
+        loader && showLoader();
+
         const response = await fetch('/api/chats/rename', {
             method: 'POST',
             body: JSON.stringify(body),
@@ -10183,27 +10248,69 @@ export async function renameChat(oldFileName, newName) {
         }
 
         if (data.sanitizedFileName) {
-            newName = data.sanitizedFileName;
+            newFileName = data.sanitizedFileName;
         }
 
-        if (selected_group) {
-            await renameGroupChat(selected_group, oldFileName, newName);
+        if (groupId) {
+            await renameGroupChat(groupId, oldFileName, newFileName);
         }
-        else {
-            if (characters[this_chid].chat == oldFileName) {
-                characters[this_chid].chat = newName;
-                $('#selected_chat_pole').val(characters[this_chid].chat);
-                await createOrEditCharacter();
-            }
+        else if (characterId !== undefined && String(characterId) === String(this_chid) && characters[characterId]?.chat === oldFileName) {
+            characters[characterId].chat = newFileName;
+            $('#selected_chat_pole').val(characters[characterId].chat);
+            await createOrEditCharacter();
         }
 
-        await reloadCurrentChat();
+        if (currentChatId) {
+            await reloadCurrentChat();
+        }
     } catch {
-        hideLoader();
+        loader && hideLoader();
         await delay(500);
-        await callPopup('An error has occurred. Chat was not renamed.', 'text');
+        await callGenericPopup('An error has occurred. Chat was not renamed.', POPUP_TYPE.TEXT);
     } finally {
-        hideLoader();
+        loader && hideLoader();
+    }
+}
+
+/**
+ * Renames the currently selected chat.
+ * @param {string} oldFileName Old name of the chat (no JSONL extension)
+ * @param {string} newName New name for the chat (no JSONL extension)
+ */
+export async function renameChat(oldFileName, newName) {
+    return await renameGroupOrCharacterChat({
+        characterId: this_chid,
+        groupId: selected_group,
+        oldFileName: oldFileName,
+        newFileName: newName,
+        loader: true,
+    });
+}
+
+/**
+ * Forces the update of the chat name for a remote character.
+ * @param {string|number} characterId Character ID to update chat name for
+ * @param {string} newName New name for the chat
+ * @returns {Promise<void>}
+ */
+export async function updateRemoteChatName(characterId, newName) {
+    const character = characters[characterId];
+    if (!character) {
+        console.warn(`Character not found for ID: ${characterId}`);
+        return;
+    }
+    character.chat = newName;
+    const mergeRequest = {
+        avatar: character.avatar,
+        chat: newName,
+    };
+    const mergeResponse = await fetch('/api/characters/merge-attributes', {
+        method: 'POST',
+        headers: getRequestHeaders(),
+        body: JSON.stringify(mergeRequest),
+    });
+    if (!mergeResponse.ok) {
+        console.error('Failed to save extension field', mergeResponse.statusText);
     }
 }
 
@@ -12415,9 +12522,7 @@ jQuery(async function () {
 
     $(document).on('click', '.external_import_button, #external_import_button', async () => {
         const html = await renderTemplateAsync('importCharacters');
-
-        /** @type {string?} */
-        const input = await callGenericPopup(html, POPUP_TYPE.INPUT, '', { wider: true, okButton: $('#popup_template').attr('popup-button-import'), rows: 4 });
+        const input = await callGenericPopup(html, POPUP_TYPE.INPUT, '', { allowVerticalScrolling: true, wider: true, okButton: $('#popup_template').attr('popup-button-import'), rows: 4 });
 
         if (!input) {
             console.debug('Custom content import cancelled');
@@ -12425,7 +12530,7 @@ jQuery(async function () {
         }
 
         // break input into one input per line
-        const inputs = input.split('\n').map(x => x.trim()).filter(x => x.length > 0);
+        const inputs = String(input).split('\n').map(x => x.trim()).filter(x => x.length > 0);
 
         for (const url of inputs) {
             let request;
