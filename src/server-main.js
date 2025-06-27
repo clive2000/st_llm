@@ -14,6 +14,7 @@ import multer from 'multer';
 import responseTime from 'response-time';
 import helmet from 'helmet';
 import bodyParser from 'body-parser';
+import open from 'open';
 
 // local library imports
 import './fetch-patch.js';
@@ -330,19 +331,15 @@ async function postSetupTasks(result) {
 
     if (cliArgs.browserLaunchEnabled) {
         try {
-            // TODO: This should be converted to a regular import when support for Node 18 is dropped
-            const openModule = await import('open');
-            const { default: open, apps } = openModule;
-
             function getBrowsers() {
                 const isAndroid = process.platform === 'android';
                 if (isAndroid) {
                     return {};
                 }
                 return {
-                    'firefox': apps.firefox,
-                    'chrome': apps.chrome,
-                    'edge': apps.edge,
+                    'firefox': open.apps.firefox,
+                    'chrome': open.apps.chrome,
+                    'edge': open.apps.edge,
                 };
             }
 
