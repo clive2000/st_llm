@@ -4204,7 +4204,13 @@ async function setBackgroundCallback(_, bg) {
         const isAbsoluteUrl = isValidUrl(bg);
 
         if (isAbsoluteUrl) {
-            const isExternal = new URL(bg, window.location.origin).origin !== window.location.origin;
+            const parsedUrl = new URL(bg);
+            const isValidProtocol = ['http:', 'https:', 'data:'].includes(parsedUrl.protocol);
+            if (!isValidProtocol) {
+                toastr.error('Invalid protocol for background URL.');
+                return '';
+            }
+            const isExternal = parsedUrl.origin !== window.location.origin;
             const externalMediaAllowed = isExternalMediaAllowed();
             if (isExternal && !externalMediaAllowed) {
                 toastr.error('External media is not allowed. Please enable it in the settings to use this background.');
