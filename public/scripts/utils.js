@@ -2462,3 +2462,22 @@ export function clearInfoBlock(target) {
         infoBlock.innerHTML = '';
     }
 }
+
+/**
+ * Checks if a URL is fetchable by making a HEAD request.
+ * @param {string|URL} url - The URL to check for fetchability
+ * @returns {Promise<boolean>} Returns true if the URL is fetchable, false otherwise.
+ */
+export async function isFetchableUrl(url) {
+    try {
+        const result = await fetch(url, {
+            method: 'HEAD',
+            cache: 'force-cache',
+        });
+
+        return result.ok;
+    } catch (error) {
+        console.error(`Error checking fetchability of ${url}:`, error);
+        return false;
+    }
+}

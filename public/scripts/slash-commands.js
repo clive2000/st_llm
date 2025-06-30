@@ -1,5 +1,5 @@
 import { Fuse, DOMPurify } from '../lib.js';
-import { copyText, flashHighlight } from './utils.js';
+import { copyText, flashHighlight, isDataURL, isFetchableUrl, isValidUrl } from './utils.js';
 
 import {
     Generate,
@@ -51,7 +51,7 @@ import {
 import { SlashCommandParser } from './slash-commands/SlashCommandParser.js';
 import { SlashCommandParserError } from './slash-commands/SlashCommandParserError.js';
 import { getMessageTimeStamp, isMobile } from './RossAscends-mods.js';
-import { hideChatMessageRange } from './chats.js';
+import { hideChatMessageRange, isExternalMediaAllowed } from './chats.js';
 import { getContext, saveMetadataDebounced } from './extensions.js';
 import { getRegexedString, regex_placement } from './extensions/regex/engine.js';
 import { findGroupMemberId, groups, is_group_generating, openGroupById, resetSelectedGroup, saveGroupChat, selected_group, getGroupMembers } from './group-chats.js';
@@ -144,6 +144,11 @@ export function initDefaultSlashCommands() {
         helpString: `
         <div>
             Sets a background according to the provided filename. Partial names allowed.
+        </div>
+        <div>
+            If background provided is a data URL or a valid URL, it will be set as the background directly.
+            The image will be added to the chat backgrounds list.
+            External media must be allowed in the user settings to use URLs from other origins.
         </div>
         <div>
             If no background is provided, this will return the currently selected background.
@@ -4180,7 +4185,7 @@ $(document).on('click', '[data-displayHelp]', function (e) {
     helpCommandCallback(null, page);
 });
 
-function setBackgroundCallback(_, bg) {
+async function setBackgroundCallback(_, bg) {
     if (!bg) {
         // allow reporting of the background name if called without args
         // for use in ST Scripts via pipe
@@ -4195,6 +4200,26 @@ function setBackgroundCallback(_, bg) {
     const result = fuse.search(bg);
 
     if (!result.length) {
+        const isDataUrl = isDataURL(bg);
+        const isAbsoluteUrl = isValidUrl(bg);
+
+        if (isAbsoluteUrl) {
+            const isExternal = new URL(bg, window.location.origin).origin !== window.location.origin;
+            const externalMediaAllowed = isExternalMediaAllowed();
+            if (isExternal && !externalMediaAllowed) {
+                toastr.error('External media is not allowed. Please enable it in the settings to use this background.');
+                return '';
+            }
+        }
+
+        // Check relative URLs if it's a valid fetchable URL
+        const isFetchable = !isAbsoluteUrl ? await isFetchableUrl(bg) : false;
+        if (isDataUrl || isAbsoluteUrl || isFetchable) {
+            const imgUrl = `url("${encodeURI(bg)}")`;
+            await eventSource.emit(event_types.FORCE_SET_BACKGROUND, { url: imgUrl, path: bg });
+            return '';
+        }
+
         toastr.error(`No background found with name "${bg}"`);
         return '';
     }

@@ -3,7 +3,7 @@ import { chat_metadata, eventSource, event_types, generateQuietPrompt, getCurren
 import { openThirdPartyExtensionMenu, saveMetadataDebounced } from './extensions.js';
 import { SlashCommand } from './slash-commands/SlashCommand.js';
 import { SlashCommandParser } from './slash-commands/SlashCommandParser.js';
-import { createThumbnail, flashHighlight, getBase64Async, stringFormat } from './utils.js';
+import { createThumbnail, flashHighlight, getBase64Async, isDataURL, isValidUrl, stringFormat } from './utils.js';
 import { t } from './i18n.js';
 import { Popup } from './popup.js';
 
@@ -72,7 +72,9 @@ async function forceSetBackground(backgroundInfo) {
 
     const list = chat_metadata[LIST_METADATA_KEY] || [];
     const bg = backgroundInfo.path;
-    list.push(bg);
+    if (!list.includes(bg)) {
+        list.push(bg);
+    }
     chat_metadata[LIST_METADATA_KEY] = list;
     saveMetadataDebounced();
     await getChatBackgroundsList();
@@ -233,9 +235,24 @@ function onSelectBackgroundClick() {
 
 async function onCopyToSystemBackgroundClick(e) {
     e.stopPropagation();
-    const bgNames = await getNewBackgroundName(this);
+    const bgNames = await getNewBackgroundName(this, { allowMatch: true });
 
     if (!bgNames) {
+        return;
+    }
+
+    if (bgNames.isExternal) {
+        const confirm = await Popup.show.confirm(t`External backgrounds cannot be copied directly.`, t`Press OK to open the image for download.`);
+        if (!confirm) {
+            return;
+        }
+        const link = document.createElement('a');
+        link.href = bgNames.oldBg;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
         return;
     }
 
@@ -305,16 +322,22 @@ async function getThumbnailFromStorage(bg) {
 /**
  * Gets the new background name from the user.
  * @param {Element} referenceElement
- * @returns {Promise<{oldBg: string, newBg: string}>}
- * */
-async function getNewBackgroundName(referenceElement) {
+ * @param {Object} options
+ * @param {boolean} [options.allowMatch=true] Whether to allow matching the old background name
+ * @returns {Promise<{oldBg: string, newBg: string, isExternal: boolean}>}
+ */
+async function getNewBackgroundName(referenceElement, { allowMatch = false } = {}) {
     const exampleBlock = $(referenceElement).closest('.bg_example');
     const isCustom = exampleBlock.attr('custom') === 'true';
     const oldBg = exampleBlock.attr('bgfile');
 
     if (!oldBg) {
         console.debug('no bgfile');
-        return;
+        return null;
+    }
+
+    if (isDataURL(oldBg) || isValidUrl(oldBg)) {
+        return { oldBg, newBg: '', isExternal: true };
     }
 
     const fileExtension = oldBg.split('.').pop();
@@ -329,12 +352,12 @@ async function getNewBackgroundName(referenceElement) {
 
     const newBg = `${newBgExtensionless}.${fileExtension}`;
 
-    if (oldBgExtensionless === newBgExtensionless) {
+    if (oldBgExtensionless === newBgExtensionless && !allowMatch) {
         console.debug('new_bg === old_bg');
         return;
     }
 
-    return { oldBg, newBg };
+    return { oldBg, newBg, isExternal: false };
 }
 
 async function onRenameBackgroundClick(e) {
