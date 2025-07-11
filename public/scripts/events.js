@@ -1,4 +1,3 @@
-
 import { EventEmitter } from '../lib/eventemitter.js';
 
 export const event_types = {
