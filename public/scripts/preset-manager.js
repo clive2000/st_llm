@@ -483,7 +483,6 @@ class PresetManager {
         try {
             await this.savePreset(newName);
             await this.deletePreset(oldName);
-            await eventSource.emit(event_types.PRESET_DELETED, { apiId: this.apiId, name: oldName });
         } catch (error) {
             toastr.error(t`Check the server connection and reload the page to prevent data loss.`, t`Preset could not be renamed`);
             console.error('Preset could not be renamed', error);
@@ -1035,6 +1034,9 @@ export async function initPresetManager() {
         }
 
         await presetManager.renamePreset(newName);
+
+        await eventSource.emit(event_types.PRESET_DELETED, { apiId: apiId, name: oldName });
+        await eventSource.emit(event_types.PRESET_CHANGED, { apiId: apiId, name: newName });
 
         if (apiId === 'openai') {
             // This is a horrible mess, but prevents the renamed preset from being corrupted.
