@@ -84,6 +84,9 @@ export const event_types = {
     SECRET_DELETED: 'secret_deleted',
     SECRET_ROTATED: 'secret_rotated',
     SECRET_EDITED: 'secret_edited',
+    PRESET_CHANGED: 'preset_changed',
+    PRESET_DELETED: 'preset_deleted',
+    MAIN_API_CHANGED: 'main_api_changed',
 };
 
 export const eventSource = new EventEmitter([event_types.APP_READY]);

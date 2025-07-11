@@ -483,6 +483,7 @@ class PresetManager {
         try {
             await this.savePreset(newName);
             await this.deletePreset(oldName);
+            await eventSource.emit(event_types.PRESET_DELETED, { apiId: this.apiId, name: oldName });
         } catch (error) {
             toastr.error(t`Check the server connection and reload the page to prevent data loss.`, t`Preset could not be renamed`);
             console.error('Preset could not be renamed', error);
@@ -1107,6 +1108,7 @@ export async function initPresetManager() {
             return;
         }
 
+        const name = presetManager.getSelectedPresetName();
         const result = await presetManager.deletePreset();
 
         if (result) {
@@ -1118,6 +1120,7 @@ export async function initPresetManager() {
         }
 
         saveSettingsDebounced();
+        await eventSource.emit(event_types.PRESET_DELETED, { apiId: apiId, name: name });
     });
 
     $(document).on('click', '[data-preset-manager-restore]', async function () {

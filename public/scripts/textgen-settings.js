@@ -372,6 +372,7 @@ async function selectPreset(name) {
     BIAS_CACHE.delete(BIAS_KEY);
     displayLogitBias(preset.logit_bias, BIAS_KEY);
     saveSettingsDebounced();
+    await eventSource.emit(event_types.PRESET_CHANGED, { apiId: 'textgenerationwebui', name: name });
 }
 
 export function formatTextGenURL(value) {
@@ -906,7 +907,7 @@ export function initTextGenSettings() {
         saveSettingsDebounced();
     });
 
-    $('#settings_preset_textgenerationwebui').on('change', function () {
+    $('#settings_preset_textgenerationwebui').on('change', async function () {
         const presetName = $(this).val();
         selectPreset(presetName);
     });

@@ -9874,10 +9874,11 @@ jQuery(async function () {
         is_delete_mode = false;
     });
 
-    $('#main_api').on('change', function () {
+    $('#main_api').on('change', async function () {
         cancelStatusCheck('Canceled because main api changed');
         changeMainAPI();
         saveSettingsDebounced();
+        await eventSource.emit(event_types.MAIN_API_CHANGED, { apiId: main_api });
     });
 
     ////////////////// OPTIMIZED RANGE SLIDER LISTENERS////////////////
