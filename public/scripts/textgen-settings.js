@@ -909,7 +909,7 @@ export function initTextGenSettings() {
 
     $('#settings_preset_textgenerationwebui').on('change', async function () {
         const presetName = $(this).val();
-        selectPreset(presetName);
+        await selectPreset(presetName);
     });
 
     $('#samplerResetButton').off('click').on('click', function () {
