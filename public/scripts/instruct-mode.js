@@ -738,9 +738,8 @@ export function getInstructMacros(env) {
     const macros = [];
 
     for (const { key, value, enabled } of instructMacros) {
-        const regex = new RegExp(`{{(${key})}}`, 'gi');
         const replace = () => enabled ? value : '';
-        macros.push({ regex, replace });
+        macros.push({ name: key, replace });
     }
 
     return macros;
