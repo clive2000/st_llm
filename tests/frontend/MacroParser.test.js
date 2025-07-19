@@ -1,5 +1,5 @@
-/** @typedef {import('../../public/lib/chevrotain.js').CstNode} CstNode */
-/** @typedef {import('../../public/lib/chevrotain.js').IRecognitionException} IRecognitionException */
+/** @typedef {import('chevrotain').CstNode} CstNode */
+/** @typedef {import('chevrotain').IRecognitionException} IRecognitionException */
 
 /** @typedef {{[tokenName: string]: (string|string[]|TestableCstNode|TestableCstNode[])}} TestableCstNode */
 /** @typedef {{name: string, message: string}} TestableRecognitionException */

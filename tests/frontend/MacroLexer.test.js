@@ -1,5 +1,5 @@
-/** @typedef {import('../../public/lib/chevrotain.js').ILexingResult} ILexingResult */
-/** @typedef {import('../../public/lib/chevrotain.js').ILexingError} ILexingError */
+/** @typedef {import('chevrotain').ILexingResult} ILexingResult */
+/** @typedef {import('chevrotain').ILexingError} ILexingError */
 /** @typedef {{type: string, text: string}} TestableToken */
 
 // Those tests ar evaluating via puppeteer, the need more time to run and finish

@@ -1,6 +1,7 @@
-import { createToken, Lexer } from '../../lib/chevrotain.js';
+import { chevrotain } from '../../lib.js';
+const { createToken, Lexer } = chevrotain;
 
-/** @typedef {import('../../lib/chevrotain.js').TokenType} TokenType */
+/** @typedef {import('chevrotain').TokenType} TokenType */
 
 /** @enum {string} */
 const modes = {

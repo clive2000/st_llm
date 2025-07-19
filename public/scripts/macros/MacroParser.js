@@ -1,7 +1,8 @@
-import { CstParser } from '../../lib/chevrotain.js';
+import { chevrotain } from '../../lib.js';
 import { MacroLexer } from './MacroLexer.js';
+const { CstParser } = chevrotain;
 
-/** @typedef {import('../../lib/chevrotain.js').TokenType} TokenType */
+/** @typedef {import('chevrotain').TokenType} TokenType */
 
 /**
  * The singleton instance of the MacroParser.
