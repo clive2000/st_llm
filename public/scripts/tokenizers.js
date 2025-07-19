@@ -1,10 +1,10 @@
 import { localforage } from '../lib.js';
-import { characters, main_api, api_server, nai_settings, online_status, this_chid } from '../script.js';
+import { characters, main_api, nai_settings, online_status, this_chid } from '../script.js';
 import { power_user, registerDebugFunction } from './power-user.js';
 import { chat_completion_sources, model_list, oai_settings } from './openai.js';
 import { groups, selected_group } from './group-chats.js';
 import { getStringHash } from './utils.js';
-import { kai_flags } from './kai-settings.js';
+import { kai_flags, kai_settings } from './kai-settings.js';
 import { textgen_types, textgenerationwebui_settings as textgen_settings, getTextGenServer, getTextGenModel } from './textgen-settings.js';
 import { getCurrentDreamGenModelTokenizer, getCurrentOpenRouterModelTokenizer, openRouterModels } from './textgen-models.js';
 
@@ -32,6 +32,7 @@ export const tokenizers = {
     COMMAND_R: 16,
     NEMO: 17,
     DEEPSEEK: 18,
+    COMMAND_A: 19,
     BEST_MATCH: 99,
 };
 
@@ -45,6 +46,7 @@ export const ENCODE_TOKENIZERS = [
     tokenizers.JAMBA,
     tokenizers.QWEN2,
     tokenizers.COMMAND_R,
+    tokenizers.COMMAND_A,
     tokenizers.NEMO,
     tokenizers.DEEPSEEK,
     // uncomment when NovelAI releases Kayra and Clio weights, lol
@@ -128,6 +130,11 @@ const TOKENIZER_URLS = {
         encode: '/api/tokenizers/command-r/encode',
         decode: '/api/tokenizers/command-r/decode',
         count: '/api/tokenizers/command-r/encode',
+    },
+    [tokenizers.COMMAND_A]: {
+        encode: '/api/tokenizers/command-a/encode',
+        decode: '/api/tokenizers/command-a/decode',
+        count: '/api/tokenizers/command-a/encode',
     },
     [tokenizers.NEMO]: {
         encode: '/api/tokenizers/nemo/encode',
@@ -339,6 +346,9 @@ export function getTokenizerBestMatch(forApi) {
             }
             if (model.includes('command-r')) {
                 return tokenizers.COMMAND_R;
+            }
+            if (model.includes('command-a')) {
+                return tokenizers.COMMAND_A;
             }
             if (model.includes('qwen2')) {
                 return tokenizers.QWEN2;
@@ -572,6 +582,7 @@ export function getTokenizerModel() {
     const jambaTokenizer = 'jamba';
     const qwen2Tokenizer = 'qwen2';
     const commandRTokenizer = 'command-r';
+    const commandATokenizer = 'command-a';
     const nemoTokenizer = 'nemo';
     const deepseekTokenizer = 'deepseek';
 
@@ -626,6 +637,9 @@ export function getTokenizerModel() {
             return qwen2Tokenizer;
         }
         else if (model?.architecture?.tokenizer === 'Cohere') {
+            if (model?.id && model?.id.includes('command-a')) {
+                return commandATokenizer;
+            }
             return commandRTokenizer;
         }
         else if (oai_settings.openrouter_model.includes('gpt-4o')) {
@@ -652,10 +666,17 @@ export function getTokenizerModel() {
     }
 
     if (oai_settings.chat_completion_source == chat_completion_sources.COHERE) {
+        if (oai_settings.cohere_model.includes('command-a')) {
+            return commandATokenizer;
+        }
         return commandRTokenizer;
     }
 
     if (oai_settings.chat_completion_source == chat_completion_sources.MAKERSUITE) {
+        return gemmaTokenizer;
+    }
+
+    if (oai_settings.chat_completion_source == chat_completion_sources.VERTEXAI) {
         return gemmaTokenizer;
     }
 
@@ -710,15 +731,6 @@ export function getTokenizerModel() {
 
     if (oai_settings.chat_completion_source === chat_completion_sources.ZEROONEAI) {
         return yiTokenizer;
-    }
-
-    if (oai_settings.chat_completion_source === chat_completion_sources.BLOCKENTROPY) {
-        if (oai_settings.blockentropy_model.includes('llama3')) {
-            return llama3Tokenizer;
-        }
-        if (oai_settings.blockentropy_model.includes('miqu') || oai_settings.blockentropy_model.includes('mixtral')) {
-            return mistralTokenizer;
-        }
     }
 
     // Default to Turbo 3.5
@@ -899,7 +911,7 @@ function countTokensFromKoboldAPI(str, resolve) {
         url: TOKENIZER_URLS[tokenizers.API_KOBOLD].count,
         data: JSON.stringify({
             text: str,
-            url: api_server,
+            url: kai_settings.api_server,
         }),
         dataType: 'json',
         contentType: 'application/json',
@@ -1050,7 +1062,7 @@ function getTextTokensFromKoboldAPI(str, resolve) {
         url: TOKENIZER_URLS[tokenizers.API_KOBOLD].encode,
         data: JSON.stringify({
             text: str,
-            url: api_server,
+            url: kai_settings.api_server,
         }),
         dataType: 'json',
         contentType: 'application/json',

@@ -6,7 +6,6 @@ import express from 'express';
 
 import { readSecret, SECRET_KEYS } from './secrets.js';
 import { readAllChunks, extractFileFromZipBuffer, forwardFetchResponse } from '../util.js';
-import { jsonParser } from '../express-common.js';
 
 const API_NOVELAI = 'https://api.novelai.net';
 const TEXT_NOVELAI = 'https://text.novelai.net';
@@ -115,7 +114,7 @@ function getRepPenaltyWhitelist(model) {
 
 export const router = express.Router();
 
-router.post('/status', jsonParser, async function (req, res) {
+router.post('/status', async function (req, res) {
     if (!req.body) return res.sendStatus(400);
     const api_key_novel = readSecret(req.user.directories, SECRET_KEYS.NOVEL);
 
@@ -150,7 +149,7 @@ router.post('/status', jsonParser, async function (req, res) {
     }
 });
 
-router.post('/generate', jsonParser, async function (req, res) {
+router.post('/generate', async function (req, res) {
     if (!req.body) return res.sendStatus(400);
 
     const api_key_novel = readSecret(req.user.directories, SECRET_KEYS.NOVEL);
@@ -271,7 +270,7 @@ router.post('/generate', jsonParser, async function (req, res) {
                     // ignore
                 }
 
-                return res.status(response.status).send({ error: { message } });
+                return res.status(500).send({ error: { message } });
             }
 
             /** @type {any} */
@@ -284,7 +283,7 @@ router.post('/generate', jsonParser, async function (req, res) {
     }
 });
 
-router.post('/generate-image', jsonParser, async (request, response) => {
+router.post('/generate-image', async (request, response) => {
     if (!request.body) {
         return response.sendStatus(400);
     }
@@ -395,7 +394,8 @@ router.post('/generate-image', jsonParser, async (request, response) => {
             });
 
             if (!upscaleResult.ok) {
-                throw new Error('NovelAI returned an error.');
+                const text = await upscaleResult.text();
+                throw new Error('NovelAI returned an error.', { cause: text });
             }
 
             const upscaledArchiveBuffer = await upscaleResult.arrayBuffer();
@@ -409,7 +409,7 @@ router.post('/generate-image', jsonParser, async (request, response) => {
 
             return response.send(upscaledBase64);
         } catch (error) {
-            console.warn('NovelAI generated an image, but upscaling failed. Returning original image.');
+            console.warn('NovelAI generated an image, but upscaling failed. Returning original image.', error);
             return response.send(originalBase64);
         }
     } catch (error) {
@@ -418,7 +418,7 @@ router.post('/generate-image', jsonParser, async (request, response) => {
     }
 });
 
-router.post('/generate-voice', jsonParser, async (request, response) => {
+router.post('/generate-voice', async (request, response) => {
     const token = readSecret(request.user.directories, SECRET_KEYS.NOVEL);
 
     if (!token) {

@@ -1,15 +1,17 @@
 import fetch from 'node-fetch';
 import { SECRET_KEYS, readSecret } from '../endpoints/secrets.js';
+import { trimTrailingSlash } from '../util.js';
 const API_MAKERSUITE = 'https://generativelanguage.googleapis.com';
 
 /**
  * Gets the vector for the given text from gecko model
  * @param {string[]} texts - The array of texts to get the vector for
  * @param {import('../users.js').UserDirectoryList} directories - The directories object for the user
+ * @param {string} model - The model to use for embedding
  * @returns {Promise<number[][]>} - The array of vectors for the texts
  */
-export async function getMakerSuiteBatchVector(texts, directories) {
-    const promises = texts.map(text => getMakerSuiteVector(text, directories));
+export async function getMakerSuiteBatchVector(texts, directories, model) {
+    const promises = texts.map(text => getMakerSuiteVector(text, directories, model));
     return await Promise.all(promises);
 }
 
@@ -17,9 +19,10 @@ export async function getMakerSuiteBatchVector(texts, directories) {
  * Gets the vector for the given text from Gemini API text-embedding-004 model
  * @param {string} text - The text to get the vector for
  * @param {import('../users.js').UserDirectoryList} directories - The directories object for the user
+ * @param {string} model - The model to use for embedding (default is 'text-embedding-004')
  * @returns {Promise<number[]>} - The vector for the text
  */
-export async function getMakerSuiteVector(text, directories) {
+export async function getMakerSuiteVector(text, directories, model) {
     const key = readSecret(directories, SECRET_KEYS.MAKERSUITE);
 
     if (!key) {
@@ -27,9 +30,8 @@ export async function getMakerSuiteVector(text, directories) {
         throw new Error('No Google AI Studio key found');
     }
 
-    const apiUrl = new URL(API_MAKERSUITE);
-    const model = 'text-embedding-004';
-    const url = `${apiUrl.origin}/v1beta/models/${model}:embedContent?key=${key}`;
+    const apiUrl = trimTrailingSlash(API_MAKERSUITE);
+    const url = `${apiUrl}/v1beta/models/${model}:embedContent?key=${key}`;
     const body = {
         content: {
             parts: [

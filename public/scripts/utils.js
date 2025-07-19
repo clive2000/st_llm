@@ -6,7 +6,7 @@ import {
 } from '../lib.js';
 
 import { getContext } from './extensions.js';
-import { characters, getRequestHeaders, this_chid } from '../script.js';
+import { characters, getRequestHeaders, this_chid, user_avatar } from '../script.js';
 import { isMobile } from './RossAscends-mods.js';
 import { collapseNewlines, power_user } from './power-user.js';
 import { debounce_timeout } from './constants.js';
@@ -14,13 +14,52 @@ import { Popup, POPUP_RESULT, POPUP_TYPE } from './popup.js';
 import { SlashCommandClosure } from './slash-commands/SlashCommandClosure.js';
 import { getTagsList } from './tags.js';
 import { groups, selected_group } from './group-chats.js';
-import { getCurrentLocale } from './i18n.js';
+import { getCurrentLocale, t } from './i18n.js';
 
 /**
  * Pagination status string template.
  * @type {string}
  */
-export const PAGINATION_TEMPLATE = '<%= rangeStart %>-<%= rangeEnd %> of <%= totalNumber %>';
+export const PAGINATION_TEMPLATE = '<%= rangeStart %>-<%= rangeEnd %> .. <%= totalNumber %>';
+
+export const localizePagination = function(container) {
+    container.find('[title="Next page"]').attr('title', t`Next page`);
+    container.find('[title="Previous page"]').attr('title', t`Previous page`);
+};
+
+/**
+ * Renders a dropdown for selecting page size in pagination.
+ * @param {number} pageSize Page size
+ * @param {number[]} sizeChangerOptions Array of page size options
+ * @returns {string} The rendered dropdown element as a string
+ */
+export const renderPaginationDropdown = function(pageSize, sizeChangerOptions) {
+    const sizeSelect = document.createElement('select');
+    sizeSelect.classList.add('J-paginationjs-size-select');
+
+    if (sizeChangerOptions.indexOf(pageSize) === -1) {
+        sizeChangerOptions.unshift(pageSize);
+        sizeChangerOptions.sort((a, b) => a - b);
+    }
+
+    for (let i = 0; i < sizeChangerOptions.length; i++) {
+        const option = document.createElement('option');
+        option.value = `${sizeChangerOptions[i]}`;
+        option.textContent = `${sizeChangerOptions[i]} ${t`/ page`}`;
+        if (sizeChangerOptions[i] === pageSize) {
+            option.setAttribute('selected', 'selected');
+        }
+        sizeSelect.appendChild(option);
+    }
+
+    return sizeSelect.outerHTML;
+};
+
+export const paginationDropdownChangeHandler = function(event, size) {
+    let dropdown = $(event?.originalEvent?.currentTarget || event.delegateTarget).find('select');
+    dropdown.find('[selected]').removeAttr('selected');
+    dropdown.find(`[value=${size}]`).attr('selected', '');
+};
 
 /**
  * Navigation options for pagination.
@@ -63,6 +102,19 @@ export function deepMerge(target, source) {
     return output;
 }
 
+/**
+ * Ensures that the provided object is a plain object.
+ * @param {object} obj Object to ensure is a plain object
+ * @return {object} A plain object, or an empty object if the input is not an object.
+ */
+export function ensurePlainObject(obj) {
+    if (typeof obj !== 'object' || obj === null || Array.isArray(obj)) {
+        return {};
+    }
+
+    return obj;
+}
+
 export function escapeHtml(str) {
     return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
@@ -84,6 +136,17 @@ export function isValidUrl(value) {
     } catch (_) {
         return false;
     }
+}
+
+/**
+ * Checks if a string is a valid UUID (version 1-5).
+ * @param {string} value String to check
+ * @returns {boolean} True if the string is a valid UUID, false otherwise.
+ */
+export function isUuid(value) {
+    // Regular expression to match UUIDs
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    return uuidRegex.test(value);
 }
 
 /**
@@ -194,6 +257,17 @@ export function stringToRange(input, min, max) {
  */
 export function onlyUnique(value, index, array) {
     return array.indexOf(value) === index;
+}
+
+/**
+ * Determines if a value is unique in an array of objects.
+ * @param {any} value Current value.
+ * @param {number} index Current index.
+ * @param {any[]} array The array being processed.
+ * @returns {boolean} True if the value is unique, false otherwise.
+ */
+export function onlyUniqueJson(value, index, array) {
+    return array.map(v => JSON.stringify(v)).indexOf(JSON.stringify(value)) === index;
 }
 
 /**
@@ -434,6 +508,33 @@ export function debounce(func, timeout = debounce_timeout.standard) {
     };
 
     return fn;
+}
+
+/**
+ * Creates a debounced function that delays invoking func until after wait milliseconds have elapsed since the last time the debounced function was invoked.
+ * @param {Function} func The function to debounce.
+ * @param {Number} [timeout=300] The timeout in milliseconds.
+ * @returns {Function} The debounced function.
+ */
+export function debounceAsync(func, timeout = debounce_timeout.standard) {
+    let timer;
+    /**@type {Promise}*/
+    let debouncePromise;
+    /**@type {Function}*/
+    let debounceResolver;
+    return (...args) => {
+        clearTimeout(timer);
+        if (!debouncePromise) {
+            debouncePromise = new Promise(resolve => {
+                debounceResolver = resolve;
+            });
+        }
+        timer = setTimeout(() => {
+            debounceResolver(func.apply(this, args));
+            debouncePromise = null;
+        }, timeout);
+        return debouncePromise;
+    };
 }
 
 /**
@@ -905,6 +1006,11 @@ function parseTimestamp(timestamp) {
         return new Date(unixTime).toISOString();
     }
 
+    // ISO 8601
+    if (moment(timestamp, moment.ISO_8601, true).isValid()) {
+        return timestamp;
+    }
+
     let dtFmt = [];
 
     // meridiem-based format
@@ -931,6 +1037,7 @@ function parseTimestamp(timestamp) {
         if (!rgxMatch) continue;
         return x.callback(...rgxMatch);
     }
+
     return;
 }
 
@@ -1009,7 +1116,7 @@ export function getImageSizeFromDataURL(dataUrl) {
 
 /**
  * Gets the filename of the character avatar without extension
- * @param {number?} [chid=null] - Character ID. If not provided, uses the current character ID
+ * @param {string|number?} [chid=null] - Character ID. If not provided, uses the current character ID
  * @param {object} [options={}] - Options arguments
  * @param {string?} [options.manualAvatarKey=null] - Manually take the following avatar key, instead of using the chid to determine the name
  * @returns {string?} The filename of the character avatar without extension, or null if the character ID is invalid
@@ -1316,32 +1423,27 @@ export async function getSanitizedFilename(fileName) {
  * Sends a base64 encoded image to the backend to be saved as a file.
  *
  * @param {string} base64Data - The base64 encoded image data.
- * @param {string} characterName - The character name to determine the sub-directory for saving.
- * @param {string} ext - The file extension for the image (e.g., 'jpg', 'png', 'webp').
+ * @param {string} subFolder - The character name to determine the sub-directory for saving.
+ * @param {string} fileName - The name of the file to save the image as (without extension).
+ * @param {string} extension - The file extension for the image (e.g., 'jpg', 'png', 'webp').
  *
  * @returns {Promise<string>} - Resolves to the saved image's path on the server.
  *                              Rejects with an error if the upload fails.
  */
-export async function saveBase64AsFile(base64Data, characterName, filename = '', ext) {
-    // Construct the full data URL
-    const format = ext; // Extract the file extension (jpg, png, webp)
-    const dataURL = `data:image/${format};base64,${base64Data}`;
-
+export async function saveBase64AsFile(base64Data, subFolder, fileName, extension) {
     // Prepare the request body
     const requestBody = {
-        image: dataURL,
-        ch_name: characterName,
-        filename: String(filename).replace(/\./g, '_'),
+        image: base64Data,
+        format: extension,
+        ch_name: subFolder,
+        filename: String(fileName).replace(/\./g, '_'),
     };
 
     // Send the data URL to your backend using fetch
     const response = await fetch('/api/images/upload', {
         method: 'POST',
+        headers: getRequestHeaders(),
         body: JSON.stringify(requestBody),
-        headers: {
-            ...getRequestHeaders(),
-            'Content-Type': 'application/json',
-        },
     });
 
     // If the response is successful, get the saved image path from the server's response
@@ -1352,6 +1454,40 @@ export async function saveBase64AsFile(base64Data, characterName, filename = '',
         const errorData = await response.json();
         throw new Error(errorData.error || 'Failed to upload the image to the server');
     }
+}
+
+/**
+ * Gets the file extension from a File object.
+ * @param {File} file The file to get the extension from
+ * @returns {string} The file extension of the given file
+ */
+export function getFileExtension(file) {
+    return file.name.substring((file.name.lastIndexOf('.') + file.name.length) % file.name.length + 1).toLowerCase().trim();
+}
+
+/**
+ * Converts UTF-8 string into Base64-encoded string.
+ *
+ * @param {string} text The UTF-8 string
+ * @returns {string} The Base64-encoded string
+ */
+export function convertTextToBase64(text) {
+    const encoder = new TextEncoder();
+    const utf8Bytes = encoder.encode(text);
+    /**
+     * return `true` if `Uint8Array.prototype.toBase64` function is supported.
+     * @see {@link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array/toBase64|MDN Reference}
+     */
+    if ('toBase64' in Uint8Array.prototype) {
+        return utf8Bytes.toBase64();
+    }
+    // Creates binary string, where each character's code point directly matches the byte value (0-255).
+    let binaryString = '';
+    const chunkSize = 8192;
+    for (let i = 0; i < utf8Bytes.length; i += chunkSize) {
+        binaryString += String.fromCharCode(...utf8Bytes.subarray(i, i + chunkSize));
+    }
+    return window.btoa(binaryString);
 }
 
 /**
@@ -1399,6 +1535,8 @@ export async function ensureImageFormatSupported(file) {
         'image/tiff',
         'image/gif',
         'image/apng',
+        'image/webp',
+        'image/avif',
     ];
 
     if (supportedTypes.includes(file.type) || !file.type.startsWith('image/')) {
@@ -1458,15 +1596,25 @@ export function createThumbnail(dataUrl, maxWidth = null, maxHeight = null, type
                 maxHeight = img.height;
             }
 
-            if (img.width > img.height) {
-                thumbnailHeight = maxWidth / aspectRatio;
+            // Do not upscale if image is already smaller than max dimensions
+            if (img.width <= maxWidth && img.height <= maxHeight) {
+                thumbnailWidth = img.width;
+                thumbnailHeight = img.height;
             } else {
-                thumbnailWidth = maxHeight * aspectRatio;
+                if (img.width > img.height) {
+                    thumbnailHeight = maxWidth / aspectRatio;
+                } else {
+                    thumbnailWidth = maxHeight * aspectRatio;
+                }
             }
 
             // Set the canvas dimensions and draw the resized image
             canvas.width = thumbnailWidth;
             canvas.height = thumbnailHeight;
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, thumbnailWidth, thumbnailHeight);
             ctx.drawImage(img, 0, 0, thumbnailWidth, thumbnailHeight);
 
             // Convert the canvas to a data URL and resolve the promise
@@ -1772,8 +1920,9 @@ export function runAfterAnimation(control, callback, timeout = 500) {
  *
  * @param {string} a - The first string to compare.
  * @param {string} b - The second string to compare.
- * @param {(a:string,b:string)=>boolean} comparisonFunction - The function to use for the comparison.
- * @returns {*} - The result of the comparison.
+ * @param {(a:string,b:string)=>T} comparisonFunction - The function to use for the comparison.
+ * @returns {T} - The result of the comparison.
+ * @template T
  */
 export function compareIgnoreCaseAndAccents(a, b, comparisonFunction) {
     if (!a || !b) return comparisonFunction(a, b); // Return the comparison result if either string is empty
@@ -1808,6 +1957,16 @@ export function includesIgnoreCaseAndAccents(text, searchTerm) {
  */
 export function equalsIgnoreCaseAndAccents(a, b) {
     return compareIgnoreCaseAndAccents(a, b, (a, b) => a === b);
+}
+
+/**
+ * Performs a case-insensitive and accent-insensitive sort.
+ * @param {string} a - The first string to compare
+ * @param {string} b - The second string to compare
+ * @returns {number} -1 if a < b, 1 if a > b, 0 if a === b
+ */
+export function sortIgnoreCaseAndAccents(a, b) {
+    return compareIgnoreCaseAndAccents(a, b, (a, b) => a?.localeCompare(b));
 }
 
 /**
@@ -2057,19 +2216,26 @@ export function getFreeName(name, list, numberFormatter = (n) => ` #${n}`) {
  */
 export function toggleDrawer(drawer, expand = true) {
     /** @type {HTMLElement} */
-    const icon = drawer.querySelector('.inline-drawer-icon');
+    const icon = drawer.querySelector(':scope > .inline-drawer-header .inline-drawer-icon');
     /** @type {HTMLElement} */
-    const content = drawer.querySelector('.inline-drawer-content');
+    const content = drawer.querySelector(':scope > .inline-drawer-content');
+
+    if (!icon || !content) {
+        console.debug('toggleDrawer: No icon or content found in the drawer element.');
+        return;
+    }
 
     if (expand) {
-        icon.classList.remove('up', 'fa-circle-chevron-up');
-        icon.classList.add('down', 'fa-circle-chevron-down');
-        content.style.display = 'block';
-    } else {
         icon.classList.remove('down', 'fa-circle-chevron-down');
         icon.classList.add('up', 'fa-circle-chevron-up');
+        content.style.display = 'block';
+    } else {
+        icon.classList.remove('up', 'fa-circle-chevron-up');
+        icon.classList.add('down', 'fa-circle-chevron-down');
         content.style.display = 'none';
     }
+
+    drawer.dispatchEvent(new CustomEvent('inline-drawer-toggle', { bubbles: true }));
 
     // Set the height of "autoSetHeight" textareas within the inline-drawer to their scroll height
     if (!CSS.supports('field-sizing', 'content')) {
@@ -2170,6 +2336,48 @@ export async function showFontAwesomePicker(customList = null) {
 }
 
 /**
+ * Finds a persona by name, with optional filtering and precedence for avatars
+ * @param {object} [options={}] - The options for the search
+ * @param {string?} [options.name=null] - The name to search for
+ * @param {boolean} [options.allowAvatar=true] - Whether to allow searching by avatar
+ * @param {boolean} [options.insensitive=true] - Whether the search should be case insensitive
+ * @param {boolean} [options.preferCurrentPersona=true] - Whether to prefer the current persona(s)
+ * @param {boolean} [options.quiet=false] - Whether to suppress warnings
+ * @returns {PersonaViewModel} The persona object
+ * @typedef {object} PersonaViewModel
+ * @property {string} avatar - The avatar of the persona
+ * @property {string} name - The name of the persona
+ */
+export function findPersona({ name = null, allowAvatar = true, insensitive = true, preferCurrentPersona = true, quiet = false } = {}) {
+    /** @type {PersonaViewModel[]} */
+    const personas = Object.entries(power_user.personas).map(([avatar, name]) => ({ avatar, name }));
+    const matches = (/** @type {PersonaViewModel} */ persona) => !name || (allowAvatar && persona.avatar === name) || (insensitive ? equalsIgnoreCaseAndAccents(persona.name, name) : persona.name === name);
+
+    // If we have a current persona and prefer it, return that if it matches
+    const currentPersona = personas.find(a => a.avatar === user_avatar);
+    if (preferCurrentPersona && currentPersona && matches(currentPersona)) {
+        return currentPersona;
+    }
+
+    // If allowAvatar is true, search by avatar first
+    if (allowAvatar && name) {
+        const personaByAvatar = personas.find(a => a.avatar === name);
+        if (personaByAvatar && matches(personaByAvatar)) {
+            return personaByAvatar;
+        }
+    }
+
+    // Search for matching personas by name
+    const matchingPersonas = personas.filter(a => matches(a));
+    if (matchingPersonas.length > 1) {
+        if (!quiet) toastr.warning(t`Multiple personas found for given conditions.`);
+        else console.warn(t`Multiple personas found for given conditions. Returning the first match.`);
+    }
+
+    return matchingPersonas[0] || null;
+}
+
+/**
  * Finds a character by name, with optional filtering and precedence for avatars
  * @param {object} [options={}] - The options for the search
  * @param {string?} [options.name=null] - The name to search for
@@ -2201,8 +2409,8 @@ export function findChar({ name = null, allowAvatar = true, insensitive = true, 
     if (preferCurrentChar) {
         const preferredCharSearch = currentChars.filter(matches);
         if (preferredCharSearch.length > 1) {
-            if (!quiet) toastr.warning('Multiple characters found for given conditions.');
-            else console.warn('Multiple characters found for given conditions. Returning the first match.');
+            if (!quiet) toastr.warning(t`Multiple characters found for given conditions.`);
+            else console.warn(t`Multiple characters found for given conditions. Returning the first match.`);
         }
         if (preferredCharSearch.length) {
             return preferredCharSearch[0];
@@ -2211,7 +2419,7 @@ export function findChar({ name = null, allowAvatar = true, insensitive = true, 
 
     // If allowAvatar is true, search by avatar first
     if (allowAvatar && name) {
-        const characterByAvatar = filteredCharacters.find(char => char.avatar === name);
+        const characterByAvatar = filteredCharacters.find(char => char.avatar === name || (!name.endsWith('.png') && char.avatar === `${name}.png`));
         if (characterByAvatar) {
             return characterByAvatar;
         }
@@ -2291,4 +2499,54 @@ export function clearInfoBlock(target) {
         infoBlock.className = '';
         infoBlock.innerHTML = '';
     }
+}
+
+/**
+ * Provides a matcher function for select2 that matches both the text and value of options.
+ * @param {import('select2').SearchOptions} params
+ * @param {import('select2').OptGroupData|import('select2').OptionData} data
+ * @return {import('select2').OptGroupData|import('select2').OptionData|null}
+ */
+export function textValueMatcher(params, data) {
+    // Always return the object if there is nothing to compare
+    if (params.term == null || params.term.trim() === '') {
+        return data;
+    }
+
+    // Do a recursive check for options with children
+    if (data.children && data.children.length > 0) {
+        // Clone the data object if there are children
+        // This is required as we modify the object to remove any non-matches
+        const match = $.extend(true, {}, data);
+
+        // Check each child of the option
+        for (let c = data.children.length - 1; c >= 0; c--) {
+            const child = data.children[c];
+
+            const matches = textValueMatcher(params, child);
+
+            // If there wasn't a match, remove the object in the array
+            if (matches == null) {
+                match.children.splice(c, 1);
+            }
+        }
+
+        // If any children matched, return the new object
+        if (match.children.length > 0) {
+            return match;
+        }
+
+        // If there were no matching children, check just the plain object
+        return textValueMatcher(params, match);
+    }
+
+    const textMatch = compareIgnoreCaseAndAccents(data.text, params.term, (a, b) => a.indexOf(b) > -1);
+    const valueMatch = data.element instanceof HTMLOptionElement && compareIgnoreCaseAndAccents(data.element.value, params.term, (a, b) => a.indexOf(b) > -1);
+
+    if (textMatch || valueMatch) {
+        return data;
+    }
+
+    // If it doesn't contain the term, don't return anything
+    return null;
 }
