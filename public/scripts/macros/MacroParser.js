@@ -26,6 +26,16 @@ class MacroParser extends CstParser {
 
         const $ = this;
 
+        // Top-level document rule that can handle both plaintext and macros
+        $.document = $.RULE('document', () => {
+            $.MANY(() => {
+                $.OR([
+                    { ALT: () => $.CONSUME(Tokens.Plaintext) },
+                    { ALT: () => $.SUBRULE($.macro) },
+                ]);
+            });
+        });
+
         // Basic Macro Structure
         $.macro = $.RULE('macro', () => {
             $.CONSUME(Tokens.Macro.Start);
